@@ -1,0 +1,1892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Harbinger Thermal Dashboard</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Special+Gothic+Condensed+One&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --black: #000000;
+    --white: #FFFFFF;
+    --metal: #E9E8E5;
+    --teal: #0E8AA3;
+    --teal-3: #3EA1B5;
+    --teal-5: #86C4D0;
+    --teal-9: #CEE7EC;
+    --warn: #F2A900;
+    --hot: #FF5A5F;
+    --nav-h: 64px;
+    color-scheme: dark;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { height: 100%; }
+  html, body { margin: 0; background: var(--black); }
+  body {
+    min-height: 100%;
+    color: var(--white);
+    font-family: 'Inter', Arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+  }
+  .h-display {
+    font-family: 'Special Gothic Condensed One', 'Arial Narrow', Impact, sans-serif;
+    font-weight: 400;
+    text-transform: uppercase;
+    line-height: 0.95;
+    margin: 0;
+  }
+
+  /* ---------- Top navigation ---------- */
+  .nav {
+    position: sticky; top: 0; z-index: 10;
+    height: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
+    padding: env(safe-area-inset-top, 0px) 24px 0;
+    display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    background: rgba(0, 0, 0, 0.92);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    flex: none;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+    color: var(--white); text-decoration: none;
+    font-family: 'Special Gothic Condensed One', 'Arial Narrow', Impact, sans-serif;
+    text-transform: uppercase; font-size: 1.5rem; line-height: 1;
+  }
+  .tabs { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .tab {
+    padding: 8px 14px; border-radius: 8px;
+    color: rgba(255, 255, 255, 0.7); text-decoration: none;
+    font-weight: 700; font-size: 0.95rem;
+    border: 1px solid transparent;
+  }
+  .tab:hover { color: var(--white); border-color: rgba(255, 255, 255, 0.28); }
+  .tab[aria-current="page"] { color: var(--white); border-color: var(--teal); background: rgba(14, 138, 163, 0.18); }
+  .tab:focus-visible, .card:focus-visible, .brand:focus-visible { outline: 2px solid var(--teal-5); outline-offset: 2px; }
+
+  /* ---------- Views ---------- */
+  .view { display: none; flex: 1; min-height: 0; }
+  .view.is-active { display: flex; flex-direction: column; }
+
+  /* ---------- Landing ---------- */
+  .landing {
+    background:
+      radial-gradient(70% 55% at 50% 105%, rgba(255, 255, 255, 0.16), transparent 70%),
+      radial-gradient(40% 30% at 85% 0%, rgba(14, 138, 163, 0.18), transparent 70%),
+      var(--black);
+  }
+  .landing-inner { width: 100%; max-width: 1200px; margin: 0 auto; padding: 56px 24px 72px; flex: 1; }
+  .landing h1 { font-size: clamp(3rem, 8vw, 6.5rem); max-width: 14ch; }
+  .landing .lead { margin: 20px 0 0; max-width: 46ch; font-size: 1.25rem; font-weight: 500; color: rgba(255, 255, 255, 0.7); }
+
+  .cards { display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 48px; }
+  @media (min-width: 900px) { .cards { grid-template-columns: 1fr 1fr; } }
+
+  .card {
+    display: flex; flex-direction: column;
+    color: var(--white); text-decoration: none;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 12px; overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s, background 0.2s;
+  }
+  .card:hover { border-color: var(--teal); background: rgba(255, 255, 255, 0.08); transform: translateY(-3px); }
+  .art {
+    background:
+      radial-gradient(60% 70% at 50% 100%, rgba(14, 138, 163, 0.28), transparent 75%),
+      rgba(0, 0, 0, 0.55);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 12px 16px 4px;
+  }
+  .art svg { display: block; width: 100%; height: auto; }
+  .card-body { padding: 28px 32px 32px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+  .card h2 { font-size: clamp(2rem, 3.4vw, 2.75rem); }
+  .card p { margin: 0; color: rgba(255, 255, 255, 0.7); font-weight: 400; max-width: 48ch; }
+  .cta {
+    margin-top: auto; padding-top: 16px;
+    display: inline-flex; align-items: center; gap: 10px;
+    font-weight: 700; color: var(--teal-5);
+  }
+  .cta svg { transition: transform 0.2s; }
+  .card:hover .cta svg { transform: translateX(4px); }
+
+  .foot { padding: 0 24px 16px; max-width: 1200px; width: 100%; margin: 0 auto; font-size: 0.85rem; font-weight: 700; }
+  .stripe { height: 8px; background: linear-gradient(90deg, var(--black) 0%, var(--teal) 100%); flex: none; }
+
+  /* ---------- Illustration motion ---------- */
+  .ink   { stroke: rgba(255, 255, 255, 0.85); }
+  .lbl   { fill: rgba(255, 255, 255, 0.7); font: 500 13px 'Inter', Arial, sans-serif; }
+  @media (prefers-reduced-motion: no-preference) {
+    .flow-r { stroke-dasharray: 7 7; animation: flow-r 0.9s linear infinite; }
+    .flow-l { stroke-dasharray: 7 7; animation: flow-l 0.9s linear infinite; }
+    @keyframes flow-r { to { stroke-dashoffset: -14; } }
+    @keyframes flow-l { to { stroke-dashoffset: 14; } }
+    .bolt { animation: pulse 1.6s ease-in-out infinite; transform-origin: 200px 110px; }
+    @keyframes pulse { 50% { opacity: 0.6; } }
+    .wave { animation: rise 1.8s ease-in infinite; }
+    .wave.w2 { animation-delay: 0.6s; }
+    .wave.w3 { animation-delay: 1.2s; }
+    @keyframes rise { 0% { opacity: 0; transform: translateY(10px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
+    .die { animation: glow 1.4s ease-in-out infinite alternate; }
+    @keyframes glow { from { filter: none; } to { filter: drop-shadow(0 0 7px rgba(255, 90, 95, 0.9)); } }
+  }
+
+  /* ---------- Footer link ---------- */
+  .site-link { color: inherit; text-decoration: none; border-bottom: 1px solid transparent; }
+  .site-link:hover { color: var(--teal-5); border-bottom-color: currentColor; }
+  .site-link:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+  @media (max-width: 640px) {
+    .nav { padding-left: 16px; padding-right: 16px; }
+    .brand span { display: none; }
+    .tab { padding: 8px 10px; font-size: 0.85rem; }
+    .landing-inner { padding: 36px 16px 48px; }
+    .card-body { padding: 24px 20px 24px; }
+  }
+</style>
+<style>
+  /* ===== On-Board Charger tool (all rules scoped to .tool-obc) ===== */
+  .tool-obc { --black: #000000; --white: #FFFFFF; --metal: #E9E8E5; --teal: #0E8AA3; --teal-3: #3EA1B5; --teal-5: #86C4D0; --teal-9: #CEE7EC; --warn: #F2A900; --hot: #FF5A5F; --bg: var(--white); --ink: var(--black); --ink-2: rgba(0, 0, 0, 0.7); --panel: var(--metal); --field: var(--white); --line: rgba(0, 0, 0, 0.2); --stripe-from: var(--white); color-scheme: light; }
+  @media (prefers-color-scheme: dark) {
+    .tool-obc:not([data-theme="light"]) { --bg: var(--black); --ink: var(--white); --ink-2: rgba(255, 255, 255, 0.7); --panel: rgba(255, 255, 255, 0.08); --field: var(--black); --line: rgba(255, 255, 255, 0.28); --stripe-from: var(--black); color-scheme: dark; }
+  }
+  .tool-obc[data-theme="dark"] { --bg: var(--black); --ink: var(--white); --ink-2: rgba(255, 255, 255, 0.7); --panel: rgba(255, 255, 255, 0.08); --field: var(--black); --line: rgba(255, 255, 255, 0.28); --stripe-from: var(--black); color-scheme: dark; }
+  .tool-obc { margin: 0; flex: 1; min-height: calc(100vh - var(--nav-h)); background: var(--bg); color: var(--ink); font-family: 'Inter', Arial, sans-serif; font-weight: 400; font-size: 1rem; line-height: 1.5; display: flex; flex-direction: column; }
+  .tool-obc .h-display { font-family: 'Special Gothic Condensed One', 'Arial Narrow', Impact, sans-serif; font-weight: 400; text-transform: uppercase; line-height: 0.95; margin: 0; }
+  .tool-obc .page { width: 100%; max-width: 1320px; margin: 0 auto; padding: 40px 24px 56px; flex: 1; }
+  .tool-obc .logo { display: block; width: 240px; height: auto; margin: 0 0 32px; }
+  .tool-obc .logo-white { display: none; }
+  @media (prefers-color-scheme: dark) {
+    .tool-obc:not([data-theme="light"]) .logo-black { display: none; }
+    .tool-obc:not([data-theme="light"]) .logo-white { display: block; }
+  }
+  .tool-obc[data-theme="dark"] .logo-black { display: none; }
+  .tool-obc[data-theme="dark"] .logo-white { display: block; }
+  .tool-obc .masthead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 32px; }
+  .tool-obc .masthead h1 { font-size: clamp(2.5rem, 5.5vw, 4.25rem); }
+  .tool-obc .masthead p { margin: 12px 0 0; font-size: 1.25rem; font-weight: 500; color: var(--ink-2); }
+  .tool-obc .btn { padding: 12px 18px; background: var(--field); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 0.95rem; font-weight: 700; cursor: pointer; }
+  .tool-obc .btn:hover { border-color: var(--teal); }
+  .tool-obc .btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; border-color: var(--teal); }
+  .tool-obc label { display: block; margin-bottom: 6px; font-size: 0.9rem; font-weight: 500; color: var(--ink-2); }
+  .tool-obc input, .tool-obc select { width: 100%; padding: 12px 14px; background: var(--field); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 1.25rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .tool-obc input:focus-visible, .tool-obc select:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; border-color: var(--teal); }
+  .tool-obc input[readonly] { background: transparent; border-style: dashed; cursor: default; }
+  .tool-obc .hint { margin: 10px 0 0; font-size: 0.85rem; font-weight: 500; color: var(--ink-2); }
+  .tool-obc .panel { background: var(--panel); border-radius: 12px; padding: 32px; min-width: 0; }
+  .tool-obc .panel > h2 { font-size: 1.75rem; margin-bottom: 24px; }
+  .tool-obc #perfPanel > h2, .tool-obc #stackPanel > h2 { font-size: 2.25rem; margin-bottom: 28px; }
+  .tool-obc .stack { display: grid; gap: 20px; }
+  .tool-obc .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .tool-obc .divider { border-top: 1px solid var(--line); padding-top: 20px; }
+  .tool-obc .subhead { margin: 0 0 16px; font-size: 1rem; font-weight: 700; color: var(--ink); text-transform: uppercase; }
+  .tool-obc .grid { display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px; }
+  @media (min-width: 1100px) {
+    .tool-obc .grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  .tool-obc .grid-2 { display: grid; grid-template-columns: 1fr; gap: 24px; }
+  @media (min-width: 1000px) {
+    .tool-obc .grid-2 { grid-template-columns: 1fr 1fr; }
+  }
+  .tool-obc .charts3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+  .tool-obc .results { background: var(--black); color: var(--white); border: 1px solid rgba(255, 255, 255, 0.22); display: flex; flex-direction: column; justify-content: space-between; gap: 24px; }
+  .tool-obc .results h2 { color: var(--white); font-size: 1.75rem; margin-bottom: 24px; }
+  .tool-obc .view-cap { margin: 0 0 8px; font-size: 1rem; font-weight: 700; color: rgba(255, 255, 255, 0.85); }
+  .tool-obc .view-cap small { font-weight: 500; font-size: 0.8rem; color: rgba(255, 255, 255, 0.6); }
+  .tool-obc .cad-box { border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 8px; padding: 8px; margin-bottom: 20px; background: var(--black); }
+  .tool-obc .cad-box svg { width: 100%; display: block; }
+  .tool-obc .elev { display: flex; gap: 8px; align-items: flex-start; }
+  .tool-obc .elev-svg { flex: 1; min-width: 0; }
+  .tool-obc .elev-labels { position: relative; width: 138px; height: 190px; flex: none; }
+  .tool-obc .elev-labels span { position: absolute; left: 0; transform: translateY(-50%); display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: var(--white); white-space: nowrap; }
+  .tool-obc .elev-labels i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; flex: none; border: 1px solid rgba(255, 255, 255, 0.5); }
+  .tool-obc .readout { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 14px 0; border-top: 1px solid rgba(255, 255, 255, 0.22); }
+  .tool-obc .readout:last-of-type { border-bottom: 1px solid rgba(255, 255, 255, 0.22); }
+  .tool-obc .readout span:first-child { color: rgba(255, 255, 255, 0.7); font-weight: 500; }
+  .tool-obc .readout span:last-child { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tool-obc .chart svg { width: 100%; height: auto; display: block; }
+  .tool-obc .c-plot { fill: var(--field); }
+  .tool-obc .c-grid { stroke: var(--line); stroke-dasharray: 4 3; }
+  .tool-obc .c-frame { fill: none; stroke: var(--line); }
+  .tool-obc .c-tick { fill: var(--ink-2); font-weight: 500; }
+  .tool-obc .c-axis { fill: var(--ink-2); font-weight: 700; }
+  .tool-obc .c-title { fill: var(--ink); font-weight: 700; }
+  .tool-obc .c-label { fill: var(--ink); font-weight: 700; }
+  .tool-obc .c-bar-label { fill: var(--ink); font-weight: 500; }
+  .tool-obc svg text { font-family: 'Inter', Arial, sans-serif; }
+  .tool-obc .legend { display: flex; flex-wrap: wrap; gap: 8px 22px; justify-content: center; margin-top: 14px; font-size: 1.05rem; font-weight: 500; color: var(--ink); }
+  .tool-obc .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-right: 8px; vertical-align: -2px; border: 1px solid var(--line); }
+  .tool-obc .msg { border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; font-weight: 500; border: 1px solid currentColor; }
+  .tool-obc .msg.warn { color: #8A5E00; background: rgba(242, 169, 0, 0.14); }
+  .tool-obc .msg.err { color: #C21F25; background: rgba(255, 90, 95, 0.14); }
+  @media (prefers-color-scheme: dark) {
+    .tool-obc:not([data-theme="light"]) .msg.warn { color: var(--warn); }
+    .tool-obc:not([data-theme="light"]) .msg.err { color: var(--hot); }
+  }
+  .tool-obc .msg pre { white-space: pre-wrap; font-size: 0.8rem; margin: 12px 0 0; }
+  .tool-obc .site-foot { max-width: 1320px; width: 100%; margin: 0 auto; padding: 0 24px 16px; font-size: 0.85rem; font-weight: 700; }
+  .tool-obc .stripe { height: 8px; background: linear-gradient(90deg, var(--stripe-from) 0%, var(--teal) 100%); }
+  @media (max-width: 560px) {
+    .tool-obc .page { padding: 28px 16px 40px; }
+    .tool-obc .panel { padding: 24px 20px; }
+    .tool-obc .logo { width: 190px; margin-bottom: 24px; }
+    .tool-obc .site-foot { padding: 0 16px 16px; }
+    .tool-obc .elev-labels { width: 118px; }
+    .tool-obc .elev-labels span { font-size: 0.78rem; }
+  }
+</style>
+<style>
+  /* ===== Junction Temperature tool (all rules scoped to .tool-tj) ===== */
+  .tool-tj { --black:#000;--white:#FFF;--metal:#E9E8E5;--teal:#0E8AA3;--teal-3:#3EA1B5;--teal-5:#86C4D0;--teal-9:#CEE7EC; --warn:#F2A900;--hot:#FF5A5F; --bg:var(--white);--ink:var(--black);--ink-2:rgba(0,0,0,.7);--panel:var(--metal);--field:var(--white); --line:rgba(0,0,0,.2);--stripe-from:var(--white);color-scheme:light; }
+  @media (prefers-color-scheme: dark) {
+    .tool-tj:not([data-theme="light"]) { --bg:var(--black);--ink:var(--white);--ink-2:rgba(255,255,255,.7);--panel:rgba(255,255,255,.08);--field:var(--black);--line:rgba(255,255,255,.28);--stripe-from:var(--black);color-scheme:dark; }
+  }
+  .tool-tj[data-theme="dark"] { --bg:var(--black);--ink:var(--white);--ink-2:rgba(255,255,255,.7);--panel:rgba(255,255,255,.08);--field:var(--black);--line:rgba(255,255,255,.28);--stripe-from:var(--black);color-scheme:dark; }
+  .tool-tj { margin:0;flex: 1; min-height: calc(100vh - var(--nav-h));background:var(--bg);color:var(--ink);font-family:'Inter',Arial,sans-serif;font-weight:400;font-size:1rem;line-height:1.5;display:flex;flex-direction:column; }
+  .tool-tj .h-display { font-family:'Special Gothic Condensed One','Arial Narrow',Impact,sans-serif;font-weight:400;text-transform:uppercase;line-height:.95;margin:0; }
+  .tool-tj .page { width:100%;max-width:1200px;margin:0 auto;padding:40px 24px 56px;flex:1; }
+  .tool-tj .masthead { display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:32px; }
+  .tool-tj .masthead h1 { font-size:clamp(2.75rem,7vw,5rem); }
+  .tool-tj .masthead p { margin:12px 0 0;font-size:1.25rem;font-weight:500;color:var(--ink-2); }
+  .tool-tj label { display:block;margin-bottom:6px;font-size:.9rem;font-weight:500;color:var(--ink-2); }
+  .tool-tj input, .tool-tj select { width:100%;padding:12px 14px;background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:1.25rem;font-weight:500;font-variant-numeric:tabular-nums; }
+  .tool-tj input:focus-visible, .tool-tj select:focus-visible { outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal); }
+  .tool-tj input:disabled { opacity:.4;cursor:not-allowed; }
+  .tool-tj .limit-field { width:11rem; }
+  .tool-tj .limit-field input { text-align:center; }
+  .tool-tj .results .limit-field { width:100%;margin-bottom:24px; }
+  .tool-tj .results .limit-field label { color:rgba(255,255,255,.7); }
+  .tool-tj .results .limit-field input { background:var(--black);color:var(--white);border-color:rgba(255,255,255,.28);text-align:left; }
+  .tool-tj .panel { background:var(--panel);border-radius:12px;padding:32px; }
+  .tool-tj .panel>h2 { font-size:1.75rem;margin-bottom:24px; }
+  .tool-tj .stack { display:grid;gap:20px; }
+  .tool-tj .pair { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
+  .tool-tj .divider { border-top:1px solid var(--line);padding-top:20px; }
+  .tool-tj .subhead { margin:0 0 16px;font-size:1rem;font-weight:700;color:var(--ink);text-transform:uppercase; }
+  .tool-tj .circuit { margin-bottom:24px; }
+  .tool-tj .chain { display:flex;align-items:center;justify-content:space-between;padding:24px 8px 40px; }
+  .tool-tj .node-wrap { position:relative;width:24px;height:24px;flex:none;transition:opacity .2s; }
+  .tool-tj .node { display:block;width:24px;height:24px;border-radius:50%;border:2px solid var(--teal); }
+  .tool-tj .n-tj { background:var(--teal); }
+  .tool-tj .n-tc { background:var(--teal-3); }
+  .tool-tj .n-ts { background:var(--teal-5); }
+  .tool-tj .n-ta { background:var(--teal-9); }
+  .tool-tj .node-cap { position:absolute;top:32px;left:50%;transform:translateX(-50%);font-weight:700;font-size:.95rem;white-space:nowrap; }
+  .tool-tj .link { position:relative;flex:1 1 0;height:2px;margin:0 14px;min-width:24px;transition:opacity .2s; }
+  .tool-tj .link::before { content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,var(--ink) 0 8px,transparent 8px 14px);opacity:.45; }
+  .tool-tj .link-label { position:absolute;bottom:10px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:.85rem;font-weight:700;color:var(--ink); }
+  .tool-tj .is-off { opacity:0; }
+  .tool-tj .grid { display:grid;grid-template-columns:1fr;gap:24px; }
+  @media (min-width:960px) {
+    .tool-tj .grid { grid-template-columns:repeat(3,1fr); }
+  }
+  .tool-tj .results { background:var(--black);color:var(--white);border:1px solid rgba(255,255,255,.22);display:flex;flex-direction:column;justify-content:space-between;gap:24px; }
+  .tool-tj .results>h2 { color:var(--white); }
+  .tool-tj .readout { display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 0;border-top:1px solid rgba(255,255,255,.22); }
+  .tool-tj .readout:last-of-type { border-bottom:1px solid rgba(255,255,255,.22); }
+  .tool-tj .readout span:first-child { color:rgba(255,255,255,.7);font-weight:500; }
+  .tool-tj .readout span:last-child { font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums; }
+  .tool-tj .tj-block { text-align:left; }
+  .tool-tj .badge { display:inline-block;padding:4px 12px;margin-bottom:16px;border:1px solid currentColor;border-radius:8px;font-size:.9rem;font-weight:700; }
+  .tool-tj .badge.is-stable { color:var(--teal-5);background:rgba(14,138,163,.22); }
+  .tool-tj .badge.is-warn { color:var(--warn);background:rgba(242,169,0,.14); }
+  .tool-tj .badge.is-hot { color:var(--hot);background:rgba(255,90,95,.14); }
+  .tool-tj .tj-label { display:block;font-weight:500;color:rgba(255,255,255,.7); }
+  .tool-tj .tj-value { display:block;margin-top:4px;font-family:'Special Gothic Condensed One','Arial Narrow',Impact,sans-serif;font-weight:400;line-height:.95;font-size:clamp(4.5rem,8vw,6.5rem);font-variant-numeric:tabular-nums; }
+  .tool-tj .meter { margin-top:24px; }
+  .tool-tj .meter-scale { display:flex;justify-content:space-between;margin-bottom:8px;font-size:.9rem;font-weight:500;color:rgba(255,255,255,.7); }
+  .tool-tj .track { height:12px;border-radius:6px;background:rgba(255,255,255,.18);overflow:hidden; }
+  .tool-tj #temp-bar { height:100%;width:0;border-radius:6px;background:var(--teal);transition:width .4s ease,background-color .2s; }
+  .tool-tj .site-foot { max-width:1200px;width:100%;margin:0 auto;padding:0 24px 16px;font-size:.85rem;font-weight:700; }
+  .tool-tj .stripe { height:8px;background:linear-gradient(90deg,var(--stripe-from) 0%,var(--teal) 100%); }
+  @media (max-width:560px) {
+    .tool-tj .page { padding:28px 16px 40px; }
+    .tool-tj .panel { padding:24px 20px; }
+    .tool-tj .link { margin:0 6px; }
+    .tool-tj .link-label { font-size:.7rem; }
+    .tool-tj .unit { display:none; }
+    .tool-tj .node-cap { font-size:.85rem; }
+    .tool-tj .limit-field { width:100%; }
+    .tool-tj .site-foot { padding:0 16px 16px; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .tool-tj #temp-bar, .tool-tj .node-wrap, .tool-tj .link { transition:none; }
+  }
+</style>
+<style>
+  /* ===== Thermal assistant (floating chat, bottom right) ===== */
+  .hb-chat { position: fixed; right: max(20px, env(safe-area-inset-right, 0px)); bottom: max(20px, env(safe-area-inset-bottom, 0px)); z-index: 50; font-family: 'Inter', Arial, sans-serif; }
+  .hb-fab { position: relative; width: 56px; height: 56px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.28); background: var(--teal); color: var(--white); display: grid; place-items: center; cursor: pointer; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); transition: transform 0.2s, background 0.2s; padding: 0; margin-left: auto; }
+  .hb-fab:hover { transform: translateY(-2px); background: var(--teal-3); }
+  .hb-fab:focus-visible, .hb-x:focus-visible, .hb-send:focus-visible, .hb-chip:focus-visible, .hb-input:focus-visible { outline: 2px solid var(--teal-5); outline-offset: 2px; }
+  .hb-fab svg { grid-area: 1 / 1; transition: opacity 0.2s, transform 0.2s; }
+  .hb-fab .ic-close { opacity: 0; transform: rotate(-90deg) scale(0.6); }
+  .hb-chat.is-open .hb-fab .ic-chat { opacity: 0; transform: rotate(90deg) scale(0.6); }
+  .hb-chat.is-open .hb-fab .ic-close { opacity: 1; transform: none; }
+  .hb-dot { position: absolute; top: 1px; right: 1px; width: 13px; height: 13px; border-radius: 50%; background: var(--hot); border: 2px solid var(--black); }
+  .hb-chat.is-open .hb-dot, .hb-dot[hidden] { display: none; }
+
+  .hb-panel { position: absolute; right: 0; bottom: 70px; width: min(380px, calc(100vw - 40px)); height: min(560px, calc(100vh - 120px)); display: flex; flex-direction: column; background: var(--black); color: var(--white); border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 12px; box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55); overflow: hidden; opacity: 0; visibility: hidden; transform: translateY(12px) scale(0.98); transform-origin: bottom right; transition: opacity 0.2s, transform 0.2s, visibility 0.2s; }
+  .hb-chat.is-open .hb-panel { opacity: 1; visibility: visible; transform: none; }
+  .hb-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.14); }
+  .hb-head h2 { font-size: 1.5rem; }
+  .hb-head p { margin: 4px 0 0; font-size: 0.8rem; font-weight: 500; color: rgba(255, 255, 255, 0.7); }
+  .hb-x { width: 32px; height: 32px; flex: none; display: grid; place-items: center; background: transparent; color: rgba(255, 255, 255, 0.7); border: 1px solid transparent; border-radius: 8px; cursor: pointer; padding: 0; }
+  .hb-x:hover { color: var(--white); border-color: rgba(255, 255, 255, 0.28); }
+
+  .hb-log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
+  .hb-msg { max-width: 90%; padding: 10px 12px; border-radius: 12px; font-size: 0.92rem; line-height: 1.45; overflow-wrap: anywhere; }
+  .hb-msg.bot { align-self: flex-start; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.14); border-bottom-left-radius: 4px; }
+  .hb-msg.user { align-self: flex-end; background: var(--teal); color: var(--white); border-bottom-right-radius: 4px; }
+  .hb-msg strong { font-weight: 700; }
+  .hb-typing { display: inline-flex; gap: 4px; padding: 14px 12px; }
+  .hb-typing i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, 0.6); animation: hb-bounce 1s infinite ease-in-out; }
+  .hb-typing i:nth-child(2) { animation-delay: 0.15s; }
+  .hb-typing i:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes hb-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+  .hb-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 12px; }
+  .hb-chip { background: transparent; color: rgba(255, 255, 255, 0.85); border: 1px solid rgba(255, 255, 255, 0.28); border-radius: 999px; padding: 5px 11px; font: 500 0.8rem 'Inter', Arial, sans-serif; cursor: pointer; }
+  .hb-chip:hover { border-color: var(--teal); color: var(--white); background: rgba(14, 138, 163, 0.18); }
+
+  .hb-form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid rgba(255, 255, 255, 0.14); }
+  .hb-input { flex: 1; min-width: 0; background: var(--black); color: var(--white); border: 1px solid rgba(255, 255, 255, 0.28); border-radius: 8px; padding: 10px 12px; font: 500 1rem 'Inter', Arial, sans-serif; }
+  .hb-input::placeholder { color: rgba(255, 255, 255, 0.45); }
+  .hb-input:focus-visible { border-color: var(--teal); }
+  .hb-send { width: 44px; flex: none; display: grid; place-items: center; background: var(--teal); color: var(--white); border: 0; border-radius: 8px; cursor: pointer; padding: 0; }
+  .hb-send:hover { background: var(--teal-3); }
+
+  @media (max-width: 560px) {
+    .hb-chat { right: max(14px, env(safe-area-inset-right, 0px)); bottom: max(14px, env(safe-area-inset-bottom, 0px)); }
+    .hb-panel { height: min(70vh, 560px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hb-fab, .hb-fab svg, .hb-panel { transition: none; }
+    .hb-typing i { animation: none; }
+    .hb-log { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a class="brand" href="#dashboard" aria-label="Harbinger Dashboard home">
+    <span>Harbinger Thermal</span>
+  </a>
+  <nav class="tabs" aria-label="Tools">
+    <a class="tab" href="#dashboard" data-view="dashboard">Dashboard</a>
+    <a class="tab" href="#obc" data-view="obc">On-Board Charger</a>
+    <a class="tab" href="#junction" data-view="junction">Junction Temperature</a>
+  </nav>
+</header>
+
+<!-- ===== Dashboard (landing) ===== -->
+<main class="view landing" id="view-dashboard">
+  <div class="landing-inner">
+    <h1 class="h-display">Harbinger Thermal Dashboard</h1>
+    <p class="lead">Choose a tool to start your analysis.</p>
+
+    <div class="cards">
+
+      <!-- Card 1: On-Board Charger -->
+      <a class="card" href="#obc">
+        <div class="art" aria-hidden="true">
+          <svg viewBox="0 0 400 220">
+            <path class="ink" d="M24 110 H8" fill="none" stroke-width="3" stroke-linecap="round"/>
+            <rect class="ink" x="24" y="80" width="38" height="60" rx="8" fill="rgba(255,255,255,.06)" stroke-width="2.5"/>
+            <rect x="62" y="91" width="14" height="7" rx="2" fill="rgba(255,255,255,.85)"/>
+            <rect x="62" y="122" width="14" height="7" rx="2" fill="rgba(255,255,255,.85)"/>
+            <text class="lbl" x="38" y="168" text-anchor="middle">Grid</text>
+
+            <rect x="140" y="58" width="120" height="104" rx="14" fill="rgba(14,138,163,.18)" stroke="#3EA1B5" stroke-width="2.5"/>
+            <g class="bolt"><polygon points="206,72 182,114 198,114 190,148 218,102 202,102" fill="#FFFFFF"/></g>
+            <text class="lbl" x="200" y="190" text-anchor="middle">On-board charger</text>
+
+            <rect class="ink" x="322" y="84" width="56" height="52" rx="8" fill="rgba(255,255,255,.06)" stroke-width="2.5"/>
+            <rect x="378" y="101" width="8" height="18" rx="2" fill="rgba(255,255,255,.85)"/>
+            <rect x="330" y="92" width="12" height="36" rx="2" fill="#86C4D0"/>
+            <rect x="346" y="92" width="12" height="36" rx="2" fill="#86C4D0"/>
+            <rect x="362" y="92" width="10" height="36" rx="2" fill="#86C4D0" opacity=".45"/>
+            <text class="lbl" x="350" y="168" text-anchor="middle">Battery</text>
+
+            <line class="flow-r" x1="82" y1="96" x2="122" y2="96" stroke="#86C4D0" stroke-width="3.5" stroke-linecap="round"/>
+            <polygon points="136,96 122,88 122,104" fill="#86C4D0"/>
+            <line class="flow-r" x1="266" y1="96" x2="304" y2="96" stroke="#86C4D0" stroke-width="3.5" stroke-linecap="round"/>
+            <polygon points="318,96 304,88 304,104" fill="#86C4D0"/>
+
+            <line class="flow-l" x1="136" y1="126" x2="96" y2="126" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round"/>
+            <polygon points="82,126 96,118 96,134" fill="#FFFFFF"/>
+            <line class="flow-l" x1="318" y1="126" x2="280" y2="126" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round"/>
+            <polygon points="266,126 280,118 280,134" fill="#FFFFFF"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <h2 class="h-display">On-Board Charger</h2>
+          <p>Estimate flow, heat load and pin-fin geometry for Bi-directional OBC cold plate, then see pressure drop, junction temperature and the thermal resistance stackup.</p>
+          <span class="cta">Open tool
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </span>
+        </div>
+      </a>
+
+      <!-- Card 2: Junction Temperature Calculator -->
+      <a class="card" href="#junction">
+        <div class="art" aria-hidden="true">
+          <svg viewBox="0 0 400 220">
+            <defs>
+              <linearGradient id="die" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#FF5A5F"/>
+                <stop offset="1" stop-color="#0E8AA3"/>
+              </linearGradient>
+            </defs>
+            <g>
+              <g fill="rgba(255,255,255,.8)">
+                <rect x="138" y="88" width="12" height="6" rx="2"/><rect x="138" y="102" width="12" height="6" rx="2"/><rect x="138" y="116" width="12" height="6" rx="2"/><rect x="138" y="130" width="12" height="6" rx="2"/><rect x="138" y="144" width="12" height="6" rx="2"/>
+                <rect x="250" y="88" width="12" height="6" rx="2"/><rect x="250" y="102" width="12" height="6" rx="2"/><rect x="250" y="116" width="12" height="6" rx="2"/><rect x="250" y="130" width="12" height="6" rx="2"/><rect x="250" y="144" width="12" height="6" rx="2"/>
+                <rect x="166" y="70" width="6" height="12" rx="2"/><rect x="183" y="70" width="6" height="12" rx="2"/><rect x="200" y="70" width="6" height="12" rx="2"/><rect x="217" y="70" width="6" height="12" rx="2"/><rect x="234" y="70" width="6" height="12" rx="2"/>
+                <rect x="166" y="158" width="6" height="12" rx="2"/><rect x="183" y="158" width="6" height="12" rx="2"/><rect x="200" y="158" width="6" height="12" rx="2"/><rect x="217" y="158" width="6" height="12" rx="2"/><rect x="234" y="158" width="6" height="12" rx="2"/>
+              </g>
+              <rect class="ink" x="150" y="82" width="100" height="76" rx="10" fill="rgba(255,255,255,.07)" stroke-width="2.5"/>
+              <g class="die"><rect x="172" y="98" width="56" height="44" rx="6" fill="url(#die)"/></g>
+              <text x="200" y="126" text-anchor="middle" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-weight="700" font-size="16">T<tspan font-size="10" dy="4">J</tspan></text>
+            </g>
+            <g fill="none" stroke="#FF5A5F" stroke-width="3.5" stroke-linecap="round">
+              <path class="wave w1" d="M176 62 q-8 -9 0 -18 t0 -18"/>
+              <path class="wave w2" d="M200 62 q-8 -9 0 -18 t0 -18"/>
+              <path class="wave w3" d="M224 62 q-8 -9 0 -18 t0 -18"/>
+            </g>
+            <text class="lbl" x="200" y="198" text-anchor="middle">Junction temperature</text>
+          </svg>
+        </div>
+        <div class="card-body">
+          <h2 class="h-display">Junction Temperature Calculator</h2>
+          <p>Estimate FET junction temperature from power, gap pad and heat-sink resistance, then check it against your T<sub>J,max</sub> limit.</p>
+          <span class="cta">Open tool
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </span>
+        </div>
+      </a>
+
+    </div>
+  </div>
+  <footer class="foot"><a class="site-link" href="https://harbingermotors.com/?utm_term=harbinger%20motors&amp;utm_campaign=brand&amp;utm_source=google&amp;utm_medium=ppc&amp;utm_content=evergreen&amp;hsa_acc=1898373411&amp;hsa_cam=22991708877&amp;hsa_grp=191928592224&amp;hsa_ad=773048739999&amp;hsa_src=g&amp;hsa_tgt=kwd-2204503973713&amp;hsa_kw=harbinger%20motors&amp;hsa_mt=p&amp;hsa_net=adwords&amp;hsa_ver=3&amp;gad_source=1&amp;gad_campaignid=22991708877&amp;gbraid=0AAAABBLJ9Tb9HIyTxhtfMsmp7XwtuHnzf&amp;gclid=Cj0KCQiA8OrXBhDEARIsAECtlx7H3oZH9SKH2NMgJaM1SL6Mh2HSQfCwm5GszD8aql9SNjK3v9_J33kaAurrEALw_wcB" target="_blank" rel="noopener noreferrer">harbingermotors.com</a></footer>
+  <div class="stripe" aria-hidden="true"></div>
+</main>
+
+<!-- ===== Tool: On-Board Charger (cold plate dashboard) ===== -->
+<section class="view" id="view-obc">
+<div class="tool tool-obc">
+<div class="page">
+  <header class="masthead">
+    <div>
+      <h1 class="h-display">OBC Cold Plate Dashboard</h1>
+      <p>Thermal and hydraulic performance analysis</p>
+    </div>
+    <button class="btn" id="resetBtn" type="button">↺ Reset defaults</button>
+  </header>
+
+  <div class="grid">
+    <!-- OPERATING POINT -->
+    <section class="panel" aria-label="Operating point">
+      <h2 class="h-display">Operating point</h2>
+      <div class="stack">
+        <div>
+          <p class="subhead">Global settings</p>
+          <div class="pair">
+            <div class="field" data-f="flow_rate_lpm"></div>
+            <div class="field" data-f="q_total_W"></div>
+            <div class="field" data-f="T_inlet_C"></div>
+            <div class="field">
+              <label for="fluid_key">Coolant fluid</label>
+              <select id="fluid_key">
+                <option value="weg5050">50/50 WEG</option>
+                <option value="water">Water (55°C)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider">
+          <p class="subhead">FET boundary condition</p>
+          <div class="pair">
+            <div class="field" data-f="N_fets"></div>
+            <div class="field" data-f="Rth_tgp"></div>
+            <div class="field" data-f="Rth_jc"></div>
+            <div class="field" data-f="T_ambient_C"></div>
+            <div class="field" data-f="h_ambient"></div>
+          </div>
+        </div>
+
+        <div class="divider">
+          <p class="subhead">Material properties</p>
+          <div class="stack">
+            <div class="field">
+              <label for="material_preset">Material preset</label>
+              <select id="material_preset"></select>
+            </div>
+            <div class="pair">
+              <div class="field" data-f="k_solid"></div>
+              <div class="field" data-f="t_base_mm"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GEOMETRY INPUTS -->
+    <section class="panel" aria-label="Geometry">
+      <h2 class="h-display">Geometry</h2>
+      <div class="stack">
+        <div>
+          <p class="subhead">Plate geometry</p>
+          <div class="pair">
+            <div class="field" data-f="L_mm"></div>
+            <div class="field" data-f="W_mm"></div>
+          </div>
+          <p class="hint">The pin array is limited by the plate: N<sub>T</sub> = ⌊(W − Bypass − D) ÷ S<sub>T</sub>⌋ + 1 and N<sub>L</sub> = ⌊(L − D) ÷ S<sub>L</sub>⌋ + 1.</p>
+        </div>
+        <div class="divider">
+          <p class="subhead">Pin array</p>
+          <div class="pair">
+            <div class="field" data-f="D_mm"></div>
+            <div class="field" data-f="H_pin_mm"></div>
+            <div class="field" data-f="S_T_mm"></div>
+            <div class="field" data-f="S_L_mm"></div>
+            <div class="field" data-f="w_channel_edge_mm"></div>
+            <div class="field" data-f="C_mm"></div>
+            <div class="field">
+              <label for="n_t_calc">Columns N<sub>T</sub> (calculated)</label>
+              <input id="n_t_calc" type="text" readonly tabindex="-1">
+            </div>
+            <div class="field">
+              <label for="n_l_calc">Rows N<sub>L</sub> (calculated)</label>
+              <input id="n_l_calc" type="text" readonly tabindex="-1">
+            </div>
+          </div>
+          <p class="hint" id="array_hint"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLD PLATE SCHEMATIC (always black) -->
+    <section class="panel results" aria-label="Cold plate schematic">
+      <div>
+        <h2 class="h-display">Cold plate schematic</h2>
+        <div id="cadViz"></div>
+      </div>
+      <div id="cadReadouts"></div>
+    </section>
+  </div>
+
+  <div id="messages"></div>
+
+  <section class="panel" id="perfPanel" style="margin-bottom:24px; display:none;" aria-label="Thermal performance">
+    <h2 class="h-display">Thermal performance</h2>
+    <div class="charts3 chart" id="perfCharts"></div>
+  </section>
+
+  <section class="panel" id="stackPanel" style="display:none;" aria-label="Thermal resistance stackup">
+    <h2 class="h-display">Thermal resistance stackup</h2>
+    <div class="grid-2">
+      <div class="chart" id="barChart"></div>
+      <div>
+        <div class="chart" id="stackChart"></div>
+        <div class="legend" id="stackLegend"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer class="site-foot"><a class="site-link" href="https://harbingermotors.com/?utm_term=harbinger%20motors&amp;utm_campaign=brand&amp;utm_source=google&amp;utm_medium=ppc&amp;utm_content=evergreen&amp;hsa_acc=1898373411&amp;hsa_cam=22991708877&amp;hsa_grp=191928592224&amp;hsa_ad=773048739999&amp;hsa_src=g&amp;hsa_tgt=kwd-2204503973713&amp;hsa_kw=harbinger%20motors&amp;hsa_mt=p&amp;hsa_net=adwords&amp;hsa_ver=3&amp;gad_source=1&amp;gad_campaignid=22991708877&amp;gbraid=0AAAABBLJ9Tb9HIyTxhtfMsmp7XwtuHnzf&amp;gclid=Cj0KCQiA8OrXBhDEARIsAECtlx7H3oZH9SKH2NMgJaM1SL6Mh2HSQfCwm5GszD8aql9SNjK3v9_J33kaAurrEALw_wcB" target="_blank" rel="noopener noreferrer">harbingermotors.com</a></footer>
+<div class="stripe" aria-hidden="true"></div>
+</div>
+</section>
+
+<!-- ===== Tool: Junction Temperature Calculator ===== -->
+<section class="view" id="view-junction">
+<div class="tool tool-tj">
+<div class="page">
+  <header class="masthead">
+    <div>
+      <h1 class="h-display">Thermal Network</h1>
+      <p>Junction temperature (T<sub>J</sub>) analysis</p>
+    </div>
+  </header>
+  <section class="panel circuit" aria-label="Equivalent thermal circuit">
+    <h2 class="h-display">Equivalent thermal circuit</h2>
+    <div class="chain">
+      <div class="node-wrap"><span class="node n-tj"></span><span class="node-cap">T<sub>J</sub></span></div>
+      <div class="link"><span class="link-label">R<sub>θJC</sub> <span class="unit">[K/W]</span></span></div>
+      <div class="node-wrap"><span class="node n-tc"></span><span class="node-cap">T<sub>C</sub></span></div>
+      <div class="link"><span class="link-label" id="label-tim">R<sub>θ-TIM</sub> <span class="unit">[K/W]</span></span></div>
+      <div class="node-wrap"><span class="node n-ts"></span><span class="node-cap">T<sub>S</sub></span></div>
+      <div class="link" id="ambient-resistor"><span class="link-label">R<sub>θSA</sub> <span class="unit">[K/W]</span></span></div>
+      <div class="node-wrap" id="ambient-node"><span class="node n-ta"></span><span class="node-cap">T<sub>A</sub></span></div>
+    </div>
+  </section>
+  <div class="grid">
+    <section class="panel" aria-label="System">
+      <h2 class="h-display">System</h2>
+      <div class="stack">
+        <div><label for="calc_mode">Cooling mode</label>
+          <select id="calc_mode"><option value="ambient">Ambient air</option><option value="sink">Liquid cold plate</option></select></div>
+        <div><label for="power">Power/FET (P) [W]</label><input type="number" id="power" value="55" inputmode="decimal"></div>
+        <div class="divider">
+          <p class="subhead">Gap pad / TIM</p>
+          <div class="stack">
+            <div class="pair">
+              <div><label for="thickness">Thickness [mm]</label><input type="number" id="thickness" value="0.5" step="0.01" inputmode="decimal"></div>
+              <div><label for="k_val">k [W/mK]</label><input type="number" id="k_val" value="5.0" step="0.1" inputmode="decimal"></div>
+            </div>
+            <div><label for="area">Contact area [mm²]</label><input type="number" id="area" value="128" step="1" inputmode="decimal"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="panel" aria-label="Resistances">
+      <h2 class="h-display">Resistances</h2>
+      <div class="stack">
+        <div><label for="r_jc">R<sub>θJC</sub> (junction to case) [K/W]</label><input type="number" id="r_jc" value="0.19" step="0.01" inputmode="decimal"></div>
+        <div id="sa_container"><label for="r_sa">R<sub>θSA</sub> (sink to air) [K/W]</label><input type="number" id="r_sa" value="0.5" step="0.01" inputmode="decimal"></div>
+        <div class="divider">
+          <p class="subhead">Reference temperature [°C]</p>
+          <div id="temp_ta_box"><label for="t_ambient">Ambient air (T<sub>A</sub>)</label><input type="number" id="t_ambient" value="50" inputmode="decimal"></div>
+          <div id="temp_ts_box" hidden><label for="t_surface">Plate surface (T<sub>S</sub>)</label><input type="number" id="t_surface" value="75" inputmode="decimal"></div>
+        </div>
+      </div>
+    </section>
+    <section class="panel results" aria-label="Live analysis">
+      <div>
+        <h2 class="h-display">Live analysis</h2>
+        <div>
+          <div class="readout"><span>R<sub>θ-TIM</sub> [K/W]</span><span id="out-rtim">--</span></div>
+          <div class="readout"><span>Total ΣR<sub>θ</sub> [K/W]</span><span id="out-rtotal">--</span></div>
+        </div>
+      </div>
+      <div class="tj-block">
+        <div class="limit-field">
+          <label for="tj_max">Limit T<sub>J,max</sub> [°C]</label>
+          <input type="number" id="tj_max" value="125" inputmode="decimal">
+        </div>
+        <div id="status-badge" class="badge is-stable">Stable</div>
+        <span class="tj-label">Junction T<sub>J</sub> [°C]</span>
+        <span id="out-tj" class="tj-value">--</span>
+        <div class="meter">
+          <div class="meter-scale"><span>0 °C</span><span id="limit-label">Limit</span></div>
+          <div class="track"><div id="temp-bar"></div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+<footer class="site-foot"><a class="site-link" href="https://harbingermotors.com/?utm_term=harbinger%20motors&amp;utm_campaign=brand&amp;utm_source=google&amp;utm_medium=ppc&amp;utm_content=evergreen&amp;hsa_acc=1898373411&amp;hsa_cam=22991708877&amp;hsa_grp=191928592224&amp;hsa_ad=773048739999&amp;hsa_src=g&amp;hsa_tgt=kwd-2204503973713&amp;hsa_kw=harbinger%20motors&amp;hsa_mt=p&amp;hsa_net=adwords&amp;hsa_ver=3&amp;gad_source=1&amp;gad_campaignid=22991708877&amp;gbraid=0AAAABBLJ9Tb9HIyTxhtfMsmp7XwtuHnzf&amp;gclid=Cj0KCQiA8OrXBhDEARIsAECtlx7H3oZH9SKH2NMgJaM1SL6Mh2HSQfCwm5GszD8aql9SNjK3v9_J33kaAurrEALw_wcB" target="_blank" rel="noopener noreferrer">harbingermotors.com</a></footer>
+<div class="stripe" aria-hidden="true"></div>
+</div>
+</section>
+
+<!-- ===== Thermal assistant (floating chat) ===== -->
+<div class="hb-chat" id="hb-chat">
+  <section class="hb-panel" id="hb-panel" role="dialog" aria-label="Thermal assistant">
+    <header class="hb-head">
+      <div>
+        <h2 class="h-display">Thermal assistant</h2>
+        <p>Viewing: <span id="hb-ctx">Dashboard</span> · runs in your browser</p>
+      </div>
+      <button class="hb-x" id="hb-close" type="button" aria-label="Close assistant">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
+    <div class="hb-log" id="hb-log" role="log" aria-live="polite"></div>
+    <div class="hb-chips" id="hb-chips"></div>
+    <form class="hb-form" id="hb-form" autocomplete="off">
+      <input class="hb-input" id="hb-input" type="text" placeholder="Ask, or set a value, e.g. flow 14" aria-label="Message the assistant">
+      <button class="hb-send" type="submit" aria-label="Send message">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
+  </section>
+  <button class="hb-fab" id="hb-fab" type="button" aria-expanded="false" aria-controls="hb-panel" aria-label="Open thermal assistant">
+    <span class="hb-dot" id="hb-dot"></span>
+    <svg class="ic-chat" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01" stroke-width="3"/></svg>
+    <svg class="ic-close" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+</div>
+
+<script>
+  const TITLES = {
+    dashboard: 'Harbinger Thermal Dashboard',
+    obc: 'On-Board Charger – Harbinger Thermal Dashboard',
+    junction: 'Junction Temperature Calculator – Harbinger Thermal Dashboard',
+  };
+
+  function route() {
+    const h = location.hash.replace('#', '');
+    const key = (h === 'obc' || h === 'junction') ? h : 'dashboard';
+
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('is-active', v.id === 'view-' + key));
+    document.querySelectorAll('.tab').forEach(t => {
+      if (t.dataset.view === key) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+    });
+
+    document.title = TITLES[key];
+    window.scrollTo(0, 0);
+  }
+
+  window.addEventListener('hashchange', route);
+  route();
+</script>
+
+<script>
+/* ===== On-Board Charger tool ===== */
+(function () {
+/* ==========================================================================
+   1. FLUID / SOLID / FET PROPERTIES
+   ========================================================================== */
+const FLUID_MATERIALS = {
+  weg5050: { name: "50/50 Water-Ethylene Glycol (WEG)", rho: 1044.0, mu: 1.52e-3, cp: 3482.0, k: 0.411, pr: 12.85 },
+  water:   { name: "Water (55 °C)", rho: 985.7, mu: 5.04e-4, cp: 4183.0, k: 0.648, pr: 3.25 },
+};
+const SOLID_MATERIALS = {
+  copper:   { name: "Copper (C11000)",  k: 398.0, rho: 8960.0, cp: 385.0 },
+  aluminum: { name: "Aluminum 6061-T6", k: 167.0, rho: 2700.0, cp: 896.0 },
+  al6063:   { name: "Aluminum 6063-T6", k: 201.0, rho: 2690.0, cp: 900.0 },
+};
+
+function npRound(x) {            // numpy-style round-half-to-even
+  const r = Math.round(x);
+  return (Math.abs(x % 1) === 0.5 && r % 2 !== 0) ? r - 1 : r;
+}
+
+/* ==========================================================================
+   2. COUPLED THERMOHYDRAULIC SOLVER
+   ========================================================================== */
+class ColdPlateFlow {
+  constructor(o) {
+    const {
+      D, H_pin, C, S_T, S_L, L, W_plate, w_channel_edge, solid, fluid, fet,
+      h_ambient, T_ambient_C,
+      alpha_bj = 0.25, K_manifold = 6.86,
+      d_port_centers = 15.0e-3, h_port_stadium = 3.737e-3,
+    } = o;
+    if (D <= 0 || H_pin <= 0 || L <= 0 || S_T <= 0 || S_L <= 0)
+      throw new Error("Pin diameter, height, pitches, and chamber length must all be positive.");
+
+    Object.assign(this, { D, H_pin, C, S_T, S_L, L, solid, fluid, fet, alpha_bj, K_manifold, h_ambient, T_ambient_C });
+    this.H_total = H_pin + C;
+    if (L < D)
+      throw new Error(`Plate length L (${(L * 1e3).toFixed(1)} mm) must be at least the pin diameter D (${(D * 1e3).toFixed(2)} mm).`);
+    if (W_plate < D + w_channel_edge - 1e-5)
+      throw new Error(`Plate width W (${(W_plate * 1e3).toFixed(1)} mm) is too small: it must be at least D + Bypass = ${((D + w_channel_edge) * 1e3).toFixed(2)} mm.`);
+    const tol = 1e-5;                                    // 0.01 mm fit tolerance
+    this.N_L = Math.max(1, Math.floor((L - D + tol) / S_L) + 1);                       // pins that fit along the length
+    this.N_T = Math.max(1, Math.floor((W_plate - w_channel_edge - D + tol) / S_T) + 1); // pins that fit across the width
+    this.W_array = (this.N_T - 1) * S_T + D;
+    this.W_edge = Math.max(0, W_plate - this.W_array);   // leftover width becomes bypass (never below the minimum)
+    this.W = this.W_array + this.W_edge;
+    this.N_pins = this.N_L * this.N_T;
+    this.S_D = Math.sqrt(S_L ** 2 + (S_T / 2) ** 2);
+    this.porosity = Math.max(1e-4, 1 - (Math.PI * (D / 2) ** 2) / (S_T * S_L));
+    this.K_darcy = (this.porosity ** 3 * D ** 2) / (150 * Math.max(1e-6, (1 - this.porosity) ** 2));
+
+    const r_port = h_port_stadium / 2;
+    this.A_port = Math.PI * r_port ** 2 + d_port_centers * h_port_stadium;
+  }
+
+  _coreVelocities(V_core) {
+    const A_frontal = this.W_array * this.H_pin;
+    const u_inf = V_core / A_frontal;
+    const { S_T, D, S_D } = this;
+    const u_max = (2 * (S_D - D) > (S_T - D))
+      ? u_inf * (S_T / (S_T - D)) * 1.35
+      : u_inf * (S_T / (2 * (S_D - D))) * 1.35;
+    const Re = (this.fluid.rho * u_max * D) / this.fluid.mu;
+    return { u_inf, u_max, Re };
+  }
+
+  corePressureDrop(V_core) {
+    if (V_core <= 1e-12) return 0;
+    const { rho, mu } = this.fluid;
+    const { u_inf, u_max, Re } = this._coreVelocities(V_core);
+    const f = Re < 100 ? 50 / Math.max(Re, 1e-3)
+            : (Re < 1e3 ? 1.5 * Re ** -0.20 : 1.25 * Re ** -0.16);
+    const dp_core = this.N_L * f * (0.5 * rho * u_max ** 2);
+
+    const gap = this.S_T - this.D;
+    const D_h = (4 * gap * this.H_pin) / (2 * gap + 2 * this.H_pin);
+    const Re_Dh = (rho * u_max * D_h) / mu;
+    const f_wall = Re_Dh < 2300 ? 16 / Math.max(Re_Dh, 1e-3) : 0.079 * Re_Dh ** -0.25;
+    const dp_end = 2 * f_wall * (this.L / D_h) * (0.5 * rho * u_inf ** 2);
+
+    const sigma = Math.max(1e-4, 1 - this.D / this.S_T);
+    const dp_minor = (0.4 * (1 - sigma ** 2) + (1 - sigma) ** 2) * (0.5 * rho * u_max ** 2);
+    return dp_core + dp_end + dp_minor;
+  }
+
+  solveHydraulics(V_total) {
+    if (V_total <= 0) throw new Error("Volumetric flow rate must be greater than zero.");
+    const { D, S_T, S_L, S_D } = this;
+    const minGap = Math.min(S_T - D, 2 * (S_D - D));
+    if (minGap <= 1e-6)
+      throw new Error(`Pins overlap: Diameter D (${(D * 1e3).toFixed(2)} mm) is too large for pitches S_T (${(S_T * 1e3).toFixed(2)} mm) / S_L (${(S_L * 1e3).toFixed(2)} mm).`);
+
+    const { rho, mu } = this.fluid;
+    const A_core = this.W_array * this.H_pin;
+
+    const bypass = (V_core, dp) => {
+      const u_core = V_core / A_core;
+      let V_gap = 0, V_edge = 0;
+      if (this.C > 1e-9 && dp > 1e-9) {                 // Beavers-Joseph tip gap
+        const G = (dp / this.L) / mu;
+        const beta = this.alpha_bj / Math.sqrt(this.K_darcy);
+        const C = this.C;
+        const A = (beta * (0.5 * G * C ** 2 - u_core)) / (1 + beta * C);
+        const B = 0.5 * G * C ** 2 - A * C;
+        V_gap = Math.max(0, -G * C ** 3 / 6 + 0.5 * A * C ** 2 + B * C) * this.W_array;
+      }
+      if (this.W_edge > 1e-9 && dp > 1e-9) {            // side bypass
+        const A_edge = this.W_edge * this.H_total;
+        const D_h = 4 * A_edge / (2 * (this.W_edge + this.H_total));
+        const u_lam = (dp * D_h ** 2) / (32 * mu * this.L);
+        const Re_lam = (rho * u_lam * D_h) / mu;
+        if (Re_lam < 2300) V_edge = u_lam * A_edge;
+        else V_edge = (dp / (0.158 * this.L * rho ** 0.75 * mu ** 0.25 * D_h ** -1.25)) ** (1 / 1.75) * A_edge;
+      }
+      return [V_gap, V_edge];
+    };
+
+    const residual = (V_core) => {
+      const dp = this.corePressureDrop(V_core);
+      const [g, e] = bypass(V_core, dp);
+      return V_core + g + e - V_total;
+    };
+
+    let V_core;
+    if (this.C <= 1e-9 && this.W_edge <= 1e-9) {
+      V_core = V_total;
+    } else {
+      let lo = 1e-7 * V_total, hi = (1 - 1e-7) * V_total;
+      const rLo = residual(lo), rHi = residual(hi);
+      if (rHi <= 0) V_core = V_total;
+      else if (rLo >= 0) V_core = lo;
+      else {                                              // bisection (robust brentq substitute)
+        let a = lo, b = hi;
+        for (let i = 0; i < 90; i++) {
+          const m = 0.5 * (a + b);
+          if (residual(m) > 0) b = m; else a = m;
+        }
+        V_core = 0.5 * (a + b);
+      }
+    }
+
+    const dp_array = this.corePressureDrop(V_core);
+    const u_port = V_total / this.A_port;
+    const dp_manifold = this.K_manifold * (0.5 * rho * u_port ** 2);
+    const dp_total = dp_array + dp_manifold;
+    const { Re } = this._coreVelocities(V_core);
+    return {
+      V_dot_total: V_total, V_dot_core: V_core,
+      bypass_fraction: Math.max(0, (V_total - V_core) / V_total),
+      Re_D_max: Re,
+      dp_array_kPa: dp_array / 1e3, dp_manifold_kPa: dp_manifold / 1e3,
+      pressure_drop_kPa: dp_total / 1e3,
+      pumping_power_W: V_total * dp_total,
+    };
+  }
+
+  thermalPerformance(flow, Q_total_W, N_fets, T_inlet_C) {
+    const Re = flow.Re_D_max;
+    const { pr, k: kf, cp, rho } = this.fluid;
+    const m_dot = rho * flow.V_dot_total;
+    const { D, S_T, S_L, C, H_total, H_pin, fet, solid } = this;
+
+    let Nu;
+    if (Re < 100) Nu = 0.90 * Re ** 0.40 * pr ** 0.36;
+    else if (Re < 1e3) Nu = 0.35 * (S_T / S_L) ** 0.2 * Re ** 0.60 * pr ** 0.36;
+    else Nu = 0.27 * (S_T / S_L) ** 0.2 * Re ** 0.63 * pr ** 0.36;
+
+    const h_eff = (Nu * (1 - C / H_total) ** 0.5 * kf) / D;
+    const m_fin = Math.sqrt((4 * h_eff) / (solid.k * D));
+    const H_c = H_pin + D / 4;
+    const eta_fin = Math.tanh(m_fin * H_c) / (m_fin * H_c);
+    const h_apparent = eta_fin * h_eff;
+
+    const A_pins = this.N_pins * (Math.PI * D * H_pin + 0.25 * Math.PI * D ** 2);
+    const A_base = this.W * this.L;
+    const A_wetted = A_pins + Math.max(0, A_base - this.N_pins * 0.25 * Math.PI * D ** 2);
+
+    const fetArea = (fet.w_fet != null && fet.l_fet != null) ? fet.w_fet * fet.l_fet : fet.area_contact;
+    const nCols = Math.max(1, fet.fets_per_row);
+    const nRows = Math.max(1, Math.ceil(N_fets / nCols));
+    const p_w = this.W / nCols, p_l = this.L / nRows;
+    const w_eff = Math.min(p_w, (fet.w_fet || Math.sqrt(fetArea)) + 2 * solid.t_base);
+    const l_eff = Math.min(p_l, (fet.l_fet || Math.sqrt(fetArea)) + 2 * solid.t_base);
+    const A_active = Math.min(A_base, N_fets * w_eff * l_eff);
+
+    const eta_0 = 1 - (A_pins / A_wetted) * (1 - eta_fin);
+    const R_conv = 1 / (eta_0 * h_eff * A_wetted);
+    const R_cond_base = solid.t_base / (solid.k * A_active);
+
+    const eps = Math.min(1, Math.sqrt(fetArea / (p_w * p_l)));
+    const psi = 1 - 1.40978 * eps + 0.34406 * eps ** 3 + 0.0435 * eps ** 5 + 0.034 * eps ** 7;
+    const R_spread = ((psi / (4 * solid.k * Math.sqrt(fetArea / Math.PI))) *
+                      (1 + 0.15 * (Math.max(p_w / p_l, p_l / p_w) - 1))) / Math.max(1, N_fets);
+    const R_cal = (nRows - 0.5) / (nRows * m_dot * cp);
+
+    const R_fluid = R_cond_base + R_conv + R_cal + R_spread;
+    const R_amb = this.h_ambient > 0 ? 1 / (this.h_ambient * 2 * A_base) : 1e9;
+    const R_cp = 1 / (1 / R_fluid + 1 / R_amb);
+    const scale = R_fluid > 0 ? R_cp / R_fluid : 1;
+
+    const T_base = T_inlet_C + Q_total_W * R_cp;
+    const R_pkg = (fet.Rth_jc + fet.Rth_tgp) / Math.max(1, N_fets);
+    const T_j = T_base + Q_total_W * R_pkg;
+
+    /* Per-FET stackup:  R_cp = (T_J - T_ref) / P_fet - R_gap pad - R_JC  (T_ref = coolant inlet) */
+    const P_fet = Q_total_W / Math.max(1, N_fets);
+    const R_cp_fet = (T_j - T_inlet_C) / P_fet - fet.Rth_tgp - fet.Rth_jc;
+
+    return {
+      h_apparent_W_m2K: h_apparent, fin_efficiency: eta_fin,
+      R_cond_base_K_W: R_cond_base * scale, R_conv_K_W: R_conv * scale,
+      R_cal_K_W: R_cal * scale, R_spread_bank_K_W: R_spread * scale,
+      R_package_bank_K_W: R_pkg, R_coldplate_effective_K_W: R_cp,
+      R_jc_fet_K_W: fet.Rth_jc,
+      R_gp_fet_K_W: fet.Rth_tgp,
+      R_cp_fet_K_W: R_cp_fet,
+      R_system_total_K_W: (T_j - T_inlet_C) / P_fet, T_baseplate_C: T_base, T_junction_C: T_j,
+    };
+  }
+
+  getCadGeometry() {
+    const mm = 1e3;
+    const L_mm = this.L * mm, W_mm = this.W * mm, w_array_mm = this.W_array * mm;
+    const w_edge_mm = this.W_edge * mm, w_side_mm = w_edge_mm / 2;
+    const D_mm = this.D * mm, H_pin_mm = this.H_pin * mm, C_mm = this.C * mm;
+    const S_T_mm = this.S_T * mm, S_L_mm = this.S_L * mm, t_base_mm = this.solid.t_base * mm;
+    const total_h_mm = t_base_mm + H_pin_mm + C_mm;
+    const x_offset = Math.max(0, (L_mm - ((this.N_L - 1) * S_L_mm + D_mm)) / 2);
+    const centers = [], sideRects = [];
+    for (let i = 0; i < this.N_L; i++) {
+      const x = x_offset + D_mm / 2 + i * S_L_mm;
+      const y_shift = (i % 2 === 1) ? S_T_mm / 2 : 0;
+      if (x + D_mm / 2 <= L_mm) sideRects.push([x - D_mm / 2, t_base_mm, D_mm, H_pin_mm]);
+      for (let j = 0; j < this.N_T; j++) {
+        const y = w_side_mm + D_mm / 2 + j * S_T_mm + y_shift;
+        if (y + D_mm / 2 <= W_mm - w_side_mm + 0.05 && x + D_mm / 2 <= L_mm) centers.push([x, y]);
+      }
+    }
+    return { L_mm, W_mm, w_array_mm, w_edge_mm, w_side_mm, D_mm, H_pin_mm, C_mm, S_T_mm, S_L_mm,
+             t_base_mm, total_h_mm, N_T: this.N_T, N_L: this.N_L, N_pins: this.N_pins,
+             pin_centers_top: centers, pin_rects_side: sideRects };
+  }
+
+  sweepFlowRates(flow_lpm, Q, N_fets, T_in, n = 60) {
+    const lpm_max = Math.max(25, Math.ceil(flow_lpm * 1.4 / 5) * 5);
+    const xs = Array.from({ length: n }, (_, i) => 1 + (lpm_max - 1) * i / (n - 1));
+    const S = { dp: [], tj: [], rcp: [], jc: [], gp: [] };
+    for (const lpm of xs) {
+      const h = this.solveHydraulics(lpm * 1e-3 / 60);
+      const t = this.thermalPerformance(h, Q, N_fets, T_in);
+      S.dp.push(h.pressure_drop_kPa); S.tj.push(t.T_junction_C); S.rcp.push(t.R_cp_fet_K_W);
+      S.jc.push(t.R_jc_fet_K_W); S.gp.push(t.R_gp_fet_K_W);
+    }
+    const mx = a => Math.max(...a), mn = a => Math.min(...a);
+    const tjR = Math.max(2, mx(S.tj) - mn(S.tj)) * 0.2;
+    const rcR = Math.max(0.002, mx(S.rcp) - mn(S.rcp)) * 0.2;
+    const tot = xs.map((_, i) => S.jc[i] + S.gp[i] + S.rcp[i]);
+    return {
+      lpm_min: 1, lpm_max, lpm_sweep: xs,
+      dp_kPa: S.dp, dp_y_max: mx(S.dp) > 0 ? mx(S.dp) * 1.15 : 10,
+      T_junction_C: S.tj, tj_y_min: mn(S.tj) - tjR, tj_y_max: mx(S.tj) + tjR,
+      R_coldplate_K_W: S.rcp, rcp_y_min: Math.max(0, mn(S.rcp) - rcR), rcp_y_max: mx(S.rcp) + rcR,
+      R_jc_K_W: S.jc, R_gp_K_W: S.gp,
+      stack_y_max: tot.length ? mx(tot) * 1.15 : 0.1,
+    };
+  }
+}
+
+/* ---- dashboard API ---- */
+function buildColdPlate(s) {
+  const preset = SOLID_MATERIALS[s.material_preset] || {};
+  const solid = { name: preset.name || "Custom Metal", k: +s.k_solid, t_base: s.t_base_mm * 1e-3,
+                  rho: preset.rho || 8960, cp: preset.cp || 385 };
+  const fet = { Rth_jc: +s.Rth_jc, Rth_tgp: +s.Rth_tgp, t_tgp: 0.508e-3, k_tgp: 5.0,
+                area_contact: 128.1e-6, w_fet: null, l_fet: null, fets_per_row: 2 };
+  const plate = new ColdPlateFlow({
+    solid, fluid: FLUID_MATERIALS[s.fluid_key], fet,
+    D: s.D_mm * 1e-3, H_pin: s.H_pin_mm * 1e-3, C: s.C_mm * 1e-3,
+    S_T: s.S_T_mm * 1e-3, S_L: s.S_L_mm * 1e-3, L: s.L_mm * 1e-3,
+    W_plate: s.W_mm * 1e-3, w_channel_edge: s.w_channel_edge_mm * 1e-3,
+    h_ambient: +s.h_ambient, T_ambient_C: +s.T_ambient_C,
+  });
+  return { plate, cad: plate.getCadGeometry() };
+}
+
+function evaluateColdPlate(plate, s) {
+  const v = s.flow_rate_lpm * 1e-3 / 60;
+  const h = plate.solveHydraulics(v);
+  const t = plate.thermalPerformance(h, s.q_total_W, s.N_fets, s.T_inlet_C);
+  const sweep = plate.sweepFlowRates(s.flow_rate_lpm, s.q_total_W, s.N_fets, s.T_inlet_C);
+  const labels = ["R_θJC", "R_θ gap pad", "R_θ cold plate"];
+  const values = [t.R_jc_fet_K_W, t.R_gp_fet_K_W, t.R_cp_fet_K_W];
+  const total = Math.max(1e-9, values.reduce((a, b) => a + b, 0));
+  return {
+    kpis: {
+      T_junction_C: t.T_junction_C, T_rise_C: t.T_junction_C - s.T_inlet_C,
+      pressure_drop_kPa: h.pressure_drop_kPa, dp_array_kPa: h.dp_array_kPa, dp_manifold_kPa: h.dp_manifold_kPa,
+      pumping_power_kW: h.pumping_power_W / 1000, watts_per_fet: s.q_total_W / Math.max(1, s.N_fets),
+      bypass_pct: h.bypass_fraction * 100, fin_efficiency_pct: t.fin_efficiency * 100,
+      R_coldplate_effective_K_W: t.R_cp_fet_K_W, R_system_total_K_W: total,
+    },
+    stackup: { labels, values, percentages: values.map(x => x / total * 100), total_K_W: total,
+               x_max: (Math.max(...values) > 0 ? Math.max(...values) : 0.1) * 1.75 },
+    sweep,
+  };
+}
+
+/* ==========================================================================
+   3. UI STATE & INPUT FIELDS
+   ========================================================================== */
+const DEFAULT_STATE = {
+  flow_rate_lpm: 10.0, q_total_W: 660.0, T_inlet_C: 55.0, T_ambient_C: 55.0, h_ambient: 5.0,
+  fluid_key: "weg5050", material_preset: "copper", k_solid: 398.0, t_base_mm: 2.0,
+  N_fets: 8, Rth_jc: 0.1900, Rth_tgp: 0.7931, w_channel_edge_mm: 3.142,
+  L_mm: 123.0, W_mm: 38.842, D_mm: 1.5, H_pin_mm: 8.8, C_mm: 0.20, S_T_mm: 3.8, S_L_mm: 3.8,
+};
+// key: [label, min, max, step, decimals]
+const FIELDS = {
+  flow_rate_lpm: ["Flow rate [LPM]", 0.5, 60, 0.5, 1],
+  q_total_W: ["Heat load Q [W]", 50, 5000, 20, 0],
+  T_inlet_C: ["Inlet temp [°C]", 0, 120, 1, 0],
+  N_fets: ["FET count", 1, 32, 1, 0],
+  Rth_jc: ["R<sub>θJC</sub> [K/W]", 0.01, 2, 0.01, 4],
+  Rth_tgp: ["R<sub>θ</sub> gap pad [K/W]", 0.01, 3, 0.02, 4],
+  h_ambient: ["Ambient HTC [W/m²K]", 0, 100, 1, 0],
+  T_ambient_C: ["Ambient temp [°C]", 0, 120, 1, 0],
+  k_solid: ["Conductivity k [W/mK]", 10, 1000, 5, 0],
+  t_base_mm: ["Base thickness [mm]", 0.5, 15, 0.25, 2],
+  D_mm: ["Diameter D [mm]", 0.4, 6, 0.1, 2],
+  H_pin_mm: ["Height H [mm]", 1, 30, 0.2, 2],
+  S_T_mm: ["Pitch S<sub>T</sub> [mm]", 0.8, 12, 0.1, 2],
+  S_L_mm: ["Pitch S<sub>L</sub> [mm]", 0.8, 12, 0.1, 2],
+  L_mm: ["Length L [mm]", 30, 400, 1, 1],
+  W_mm: ["Width W [mm]", 10, 200, 1, 2],
+  w_channel_edge_mm: ["Min. bypass [mm]", 0, 25, 0.1, 3],
+  C_mm: ["Tip gap C [mm]", 0, 5, 0.05, 2],
+};
+
+const state = {};
+function resetState() { Object.assign(state, DEFAULT_STATE); }
+resetState();
+
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const fmt = (key, v) => (+v).toFixed(FIELDS[key][4]);
+
+function buildFields() {
+  document.querySelectorAll("[data-f]").forEach(el => {
+    const key = el.dataset.f, [label, min, max, step] = FIELDS[key];
+    el.innerHTML = `<label for="in_${key}">${label}</label>
+      <input id="in_${key}" type="number" min="${min}" max="${max}" step="${step}" inputmode="decimal" value="${fmt(key, state[key])}">`;
+    const input = el.querySelector("input");
+    input.addEventListener("input", () => {
+      const v = parseFloat(input.value);
+      if (Number.isNaN(v)) return;
+      state[key] = clamp(v, min, max);
+      schedule();
+    });
+    input.addEventListener("change", () => {
+      const v = parseFloat(input.value);
+      state[key] = Number.isNaN(v) ? state[key] : clamp(v, min, max);
+      input.value = fmt(key, state[key]);
+      schedule();
+    });
+  });
+
+  const sel = document.getElementById("material_preset");
+  sel.innerHTML = Object.entries(SOLID_MATERIALS).map(([k, m]) => `<option value="${k}">${m.name}</option>`).join("")
+                + `<option value="custom">Custom solid</option>`;
+  sel.value = state.material_preset;
+  sel.addEventListener("change", () => {
+    state.material_preset = sel.value;
+    if (SOLID_MATERIALS[sel.value]) {
+      state.k_solid = SOLID_MATERIALS[sel.value].k;
+      syncInputs();
+    }
+    schedule();
+  });
+  const fl = document.getElementById("fluid_key");
+  fl.value = state.fluid_key;
+  fl.addEventListener("change", () => { state.fluid_key = fl.value; schedule(); });
+}
+
+function syncInputs() {
+  for (const key in FIELDS) document.getElementById("in_" + key).value = fmt(key, state[key]);
+  document.getElementById("material_preset").value = state.material_preset;
+  document.getElementById("fluid_key").value = state.fluid_key;
+}
+
+document.getElementById("resetBtn").addEventListener("click", () => { resetState(); syncInputs(); schedule(); });
+
+/* ==========================================================================
+   4. SVG CHART HELPERS
+   ========================================================================== */
+let uid = 0;
+
+function niceTicks(min, max, n = 5) {
+  const span = max - min;
+  if (!(span > 0)) return [min];
+  const raw = span / n, mag = 10 ** Math.floor(Math.log10(raw)), norm = raw / mag;
+  const step = (norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10) * mag;
+  const out = [];
+  for (let v = Math.ceil(min / step - 1e-9) * step; v <= max + 1e-9; v += step) out.push(+v.toFixed(12));
+  out.step = step;
+  return out;
+}
+const tickFmt = (v, step) => v.toFixed(Math.min(4, Math.max(0, -Math.floor(Math.log10(step || 1)))));
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+function frame(W, H, m, o, fs) {
+  const pw = W - m.l - m.r, ph = H - m.t - m.b;
+  const sx = x => m.l + (x - o.xmin) / (o.xmax - o.xmin) * pw;
+  const sy = y => m.t + (1 - (y - o.ymin) / (o.ymax - o.ymin)) * ph;
+  const xt = niceTicks(o.xmin, o.xmax, 5), yt = niceTicks(o.ymin, o.ymax, 5);
+  let s = `<rect class="c-plot" x="${m.l}" y="${m.t}" width="${pw}" height="${ph}" rx="4"/>`;
+  yt.forEach(v => { s += `<line class="c-grid" x1="${m.l}" x2="${m.l + pw}" y1="${sy(v)}" y2="${sy(v)}"/>
+    <text class="c-tick" x="${m.l - 8}" y="${sy(v) + fs * 0.35}" text-anchor="end" font-size="${fs}">${tickFmt(v, yt.step)}</text>`; });
+  xt.forEach(v => { s += `<line class="c-grid" y1="${m.t}" y2="${m.t + ph}" x1="${sx(v)}" x2="${sx(v)}"/>
+    <text class="c-tick" x="${sx(v)}" y="${m.t + ph + fs + 6}" text-anchor="middle" font-size="${fs}">${tickFmt(v, xt.step)}</text>`; });
+  s += `<rect class="c-frame" x="${m.l}" y="${m.t}" width="${pw}" height="${ph}" rx="4"/>`;
+  s += `<text class="c-title" x="${m.l + pw / 2}" y="${m.t - 20}" text-anchor="middle" font-size="${fs + 6}">${esc(o.title)}</text>`;
+  s += `<text class="c-axis" x="${m.l + pw / 2}" y="${H - 10}" text-anchor="middle" font-size="${fs + 1.5}">${esc(o.xlabel)}</text>`;
+  s += `<text class="c-axis" transform="translate(20 ${m.t + ph / 2}) rotate(-90)" text-anchor="middle" font-size="${fs + 1.5}">${esc(o.ylabel)}</text>`;
+  return { s, sx, sy, pw, ph };
+}
+
+function lineChart(o) {
+  const W = 420, H = 340, m = { l: 76, r: 18, t: 62, b: 62 }, fs = 14;
+  const f = frame(W, H, m, o, fs), id = "clip" + uid++;
+  const pts = o.xs.map((x, i) => `${f.sx(x).toFixed(2)},${f.sy(o.ys[i]).toFixed(2)}`);
+  const area = `M${f.sx(o.xs[0])},${f.sy(o.ymin)} L${pts.join(" L")} L${f.sx(o.xs[o.xs.length - 1])},${f.sy(o.ymin)} Z`;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.title)}"><defs><clipPath id="${id}"><rect x="${m.l}" y="${m.t}" width="${f.pw}" height="${f.ph}"/></clipPath></defs>`;
+  s += f.s;
+  s += `<g clip-path="url(#${id})"><path d="${area}" style="fill:${o.color}" opacity=".15"/><polyline points="${pts.join(" ")}" fill="none" style="stroke:${o.color}" stroke-width="3" stroke-linejoin="round"/></g>`;
+  const px = f.sx(o.px), py = f.sy(o.py);
+  const anchor = px > W - m.r - 70 ? "end" : px < m.l + 70 ? "start" : "middle";
+  s += `<circle cx="${px}" cy="${py}" r="7" style="fill:var(--teal);stroke:var(--ink)" stroke-width="2"/>
+        <text class="c-label" x="${px}" y="${py - 14}" text-anchor="${anchor}" font-size="16">${esc(o.plabel)}</text></svg>`;
+  return s;
+}
+
+function stackChart(o, sweep, series, colors, flow) {
+  const W = 640, H = 430, m = { l: 84, r: 20, t: 62, b: 62 }, fs = 15;
+  const f = frame(W, H, m, o, fs), id = "clip" + uid++;
+  const n = sweep.lpm_sweep.length, cum = [new Array(n).fill(0)];
+  series.forEach((sr, k) => cum.push(cum[k].map((v, i) => v + sr[i])));
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.title)}"><defs><clipPath id="${id}"><rect x="${m.l}" y="${m.t}" width="${f.pw}" height="${f.ph}"/></clipPath></defs>${f.s}<g clip-path="url(#${id})">`;
+  series.forEach((_, k) => {
+    const top = sweep.lpm_sweep.map((x, i) => `${f.sx(x).toFixed(2)},${f.sy(cum[k + 1][i]).toFixed(2)}`);
+    const bot = sweep.lpm_sweep.map((x, i) => `${f.sx(x).toFixed(2)},${f.sy(cum[k][i]).toFixed(2)}`).reverse();
+    s += `<polygon points="${top.join(" ")} ${bot.join(" ")}" style="fill:${colors[k]};stroke:var(--field)" stroke-width=".8"/>`;
+  });
+  s += `<line x1="${f.sx(flow)}" x2="${f.sx(flow)}" y1="${m.t}" y2="${m.t + f.ph}" style="stroke:var(--hot)" stroke-width="2.5" stroke-dasharray="6 4"/></g></svg>`;
+  return s;
+}
+
+function barChart(st, flow, colors) {
+  const W = 640, H = 430, m = { l: 190, r: 20, t: 62, b: 62 };
+  const title = `System resistance @ ${flow.toFixed(1)} LPM`;
+  const pw = W - m.l - m.r, ph = H - m.t - m.b, fs = 15;
+  const sx = x => m.l + x / st.x_max * pw;
+  const xt = niceTicks(0, st.x_max, 5);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}"><rect class="c-plot" x="${m.l}" y="${m.t}" width="${pw}" height="${ph}" rx="4"/>`;
+  xt.forEach(v => { s += `<line class="c-grid" x1="${sx(v)}" x2="${sx(v)}" y1="${m.t}" y2="${m.t + ph}"/>
+    <text class="c-tick" x="${sx(v)}" y="${m.t + ph + fs + 6}" text-anchor="middle" font-size="${fs}">${tickFmt(v, xt.step)}</text>`; });
+  const band = ph / st.labels.length, bh = band * 0.62;
+  st.labels.forEach((lab, i) => {
+    const cy = m.t + band * (i + 0.5), w = sx(st.values[i]) - m.l;
+    s += `<rect x="${m.l}" y="${cy - bh / 2}" width="${Math.max(0, w)}" height="${bh}" rx="3" style="fill:${colors[i]};stroke:var(--line)"/>
+      <text class="c-bar-label" x="${m.l - 10}" y="${cy + 5}" text-anchor="end" font-size="${fs + 1}">${lab}</text>
+      <text class="c-bar-label" x="${m.l + w + 8}" y="${cy + 5}" font-size="${fs - 1}">${st.values[i].toFixed(4)} K/W (${st.percentages[i].toFixed(1)}%)</text>`;
+  });
+  s += `<rect class="c-frame" x="${m.l}" y="${m.t}" width="${pw}" height="${ph}" rx="4"/>
+    <text class="c-title" x="${m.l + pw / 2}" y="${m.t - 20}" text-anchor="middle" font-size="${fs + 6}">${esc(title)}</text>
+    <text class="c-axis" x="${m.l + pw / 2}" y="${H - 10}" text-anchor="middle" font-size="${fs + 1.5}">Thermal resistance [K/W]</text></svg>`;
+  return s;
+}
+
+/* ---- Cold plate schematic ---- */
+function pinPath(centers, r) {
+  const d = [], r2 = 2 * r;
+  for (const [x, y] of centers)
+    d.push(`M${(x - r).toFixed(3)} ${y.toFixed(3)}a${r.toFixed(3)} ${r.toFixed(3)} 0 1 0 ${r2.toFixed(3)} 0a${r.toFixed(3)} ${r.toFixed(3)} 0 1 0 ${(-r2).toFixed(3)} 0`);
+  return d.join("");
+}
+
+function cadViews(cad, preset, k) {
+  const isCu = preset.toLowerCase().includes("copper") || k > 280;
+  const pinFill = isCu ? "#F59E0B" : "#E9E8E5", baseFill = isCu ? "#B45309" : "#6B6B6B";
+  const { L_mm: L, W_mm: W, w_side_mm: ws, w_array_mm: wa, D_mm: D } = cad;
+  const Y = y => W - y;
+  const DIM = "rgba(255,255,255,.9)", EXT = "rgba(255,255,255,.45)";
+
+  /* ---- planform with dimensions ---- */
+  const fs = L * 0.05, tfs = fs * 0.85, a = fs * 0.5;
+  const vx = -L * 0.13, vy = -fs * 2.6;
+  const vw = L * 0.13 + L + fs * 3.9, vh = fs * 2.6 + W + fs * 3.9;
+  let top = `<svg viewBox="${vx} ${vy} ${vw} ${vh}" role="img" aria-label="Plate platform view with dimensions">
+    <rect x="0" y="0" width="${L}" height="${W}" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.55)" stroke-width="1.4" vector-effect="non-scaling-stroke"/>`;
+  if (ws > 0.01) {
+    top += `<rect x="0" y="${Y(ws)}" width="${L}" height="${ws}" fill="#FF5A5F" opacity=".4"/>
+            <rect x="0" y="0" width="${L}" height="${ws}" fill="#FF5A5F" opacity=".4"/>
+            <line x1="${L / 2}" y1="${-fs * 0.45}" x2="${L / 2}" y2="${ws / 2}" stroke="#FFB3B5" stroke-width="1.2" vector-effect="non-scaling-stroke"/>
+            <text x="${L / 2}" y="${-fs * 0.7}" font-size="${tfs}" fill="#FFB3B5" font-weight="700" text-anchor="middle">Bypass ${ws.toFixed(2)} mm per side</text>`;
+  }
+  top += `<rect x="0" y="${Y(ws + wa)}" width="${L}" height="${wa}" fill="none" stroke="#86C4D0" stroke-width=".9" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/>`;
+  if (cad.pin_centers_top.length) {
+    const centers = cad.pin_centers_top.map(([x, y]) => [x, Y(y)]);
+    top += `<path d="${pinPath(centers, D / 2)}" fill="${pinFill}" stroke="rgba(0,0,0,.6)" stroke-width=".35" vector-effect="non-scaling-stroke"/>`;
+  }
+  /* flow arrow + label */
+  const ax0 = -L * 0.115, ax1 = L * 0.035, ay = W / 2, hh = Math.min(W * 0.09, 3.5), hl = L * 0.018;
+  top += `<line x1="${ax0}" y1="${ay}" x2="${ax1 - hl}" y2="${ay}" stroke="#86C4D0" stroke-width="2.4" vector-effect="non-scaling-stroke"/>
+          <polygon points="${ax1},${ay} ${ax1 - hl},${ay - hh} ${ax1 - hl},${ay + hh}" fill="#86C4D0"/>
+          <text x="${(ax0 + 0) / 2}" y="${ay - hh - fs * 0.35}" font-size="${tfs}" fill="#86C4D0" font-weight="700" text-anchor="middle">Flow</text>`;
+  /* L dimension (below) */
+  const yd = W + fs * 1.4;
+  top += `<line x1="0" y1="${W}" x2="0" y2="${yd + fs * 0.3}" stroke="${EXT}" stroke-width="1" vector-effect="non-scaling-stroke"/>
+          <line x1="${L}" y1="${W}" x2="${L}" y2="${yd + fs * 0.3}" stroke="${EXT}" stroke-width="1" vector-effect="non-scaling-stroke"/>
+          <line x1="0" y1="${yd}" x2="${L}" y2="${yd}" stroke="${DIM}" stroke-width="1.3" vector-effect="non-scaling-stroke"/>
+          <polygon points="0,${yd} ${a},${yd - a / 2} ${a},${yd + a / 2}" fill="${DIM}"/>
+          <polygon points="${L},${yd} ${L - a},${yd - a / 2} ${L - a},${yd + a / 2}" fill="${DIM}"/>
+          <text x="${L / 2}" y="${yd + fs * 1.35}" font-size="${tfs}" fill="#fff" font-weight="700" text-anchor="middle">L = ${L.toFixed(1)} mm</text>`;
+  /* W dimension (right) */
+  const xd = L + fs * 1.4, xt = xd + fs * 1.5;
+  top += `<line x1="${L}" y1="0" x2="${xd + fs * 0.3}" y2="0" stroke="${EXT}" stroke-width="1" vector-effect="non-scaling-stroke"/>
+          <line x1="${L}" y1="${W}" x2="${xd + fs * 0.3}" y2="${W}" stroke="${EXT}" stroke-width="1" vector-effect="non-scaling-stroke"/>
+          <line x1="${xd}" y1="0" x2="${xd}" y2="${W}" stroke="${DIM}" stroke-width="1.3" vector-effect="non-scaling-stroke"/>
+          <polygon points="${xd},0 ${xd - a / 2},${a} ${xd + a / 2},${a}" fill="${DIM}"/>
+          <polygon points="${xd},${W} ${xd - a / 2},${W - a} ${xd + a / 2},${W - a}" fill="${DIM}"/>
+          <text transform="rotate(-90 ${xt} ${W / 2})" x="${xt}" y="${W / 2}" font-size="${tfs}" fill="#fff" font-weight="700" text-anchor="middle">W = ${W.toFixed(1)} mm</text></svg>`;
+
+  /* ---- pin detail (to scale, staggered) ---- */
+  const D_ = cad.D_mm, ST = cad.S_T_mm, SL = cad.S_L_mm;
+  const sc = Math.min(250 / (2 * SL + D_), 100 / (1.5 * ST + D_));
+  const r = D_ * sc / 2, ox = 112 + r, oy = 34 + r;
+  const cx = i => ox + i * SL * sc;
+  const cy = (i, j) => oy + j * ST * sc + (i % 2 ? ST * sc / 2 : 0);
+  const yb = oy + 1.5 * ST * sc + r + 20;
+  const PH = yb + 34;
+  let detail = `<svg viewBox="0 0 400 ${PH.toFixed(1)}" role="img" aria-label="Pin array detail with pitch and diameter labels">
+    <text x="${ox - r}" y="16" font-size="14" fill="#86C4D0" font-weight="700">Flow</text>
+    <line x1="${ox - r + 40}" y1="12" x2="${ox - r + 84}" y2="12" stroke="#86C4D0" stroke-width="2.2"/>
+    <polygon points="${ox - r + 92},12 ${ox - r + 82},7 ${ox - r + 82},17" fill="#86C4D0"/>`;
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++)
+    detail += `<circle cx="${cx(i).toFixed(1)}" cy="${cy(i, j).toFixed(1)}" r="${r.toFixed(1)}" fill="${pinFill}" stroke="rgba(0,0,0,.6)"/>`;
+  /* S_T (vertical, left of first column) */
+  const xs = cx(0) - r - 24;
+  detail += `<line x1="${cx(0) - r - 4}" y1="${cy(0, 0)}" x2="${xs - 6}" y2="${cy(0, 0)}" stroke="${EXT}"/>
+    <line x1="${cx(0) - r - 4}" y1="${cy(0, 1)}" x2="${xs - 6}" y2="${cy(0, 1)}" stroke="${EXT}"/>
+    <line x1="${xs}" y1="${cy(0, 0)}" x2="${xs}" y2="${cy(0, 1)}" stroke="${DIM}" stroke-width="1.5"/>
+    <polygon points="${xs},${cy(0, 0)} ${xs - 4},${cy(0, 0) + 8} ${xs + 4},${cy(0, 0) + 8}" fill="${DIM}"/>
+    <polygon points="${xs},${cy(0, 1)} ${xs - 4},${cy(0, 1) - 8} ${xs + 4},${cy(0, 1) - 8}" fill="${DIM}"/>
+    <text x="${xs - 9}" y="${((cy(0, 0) + cy(0, 1)) / 2 - 3).toFixed(1)}" font-size="14" fill="#fff" font-weight="700" text-anchor="end">S<tspan font-size="10" dy="3">T</tspan><tspan dy="-3"> = ${ST.toFixed(2)}</tspan></text>`;
+  /* S_L (horizontal, below) */
+  detail += `<line x1="${cx(0)}" y1="${cy(0, 1) + r + 2}" x2="${cx(0)}" y2="${yb + 6}" stroke="${EXT}" stroke-dasharray="3 3"/>
+    <line x1="${cx(1)}" y1="${cy(1, 1) + r + 2}" x2="${cx(1)}" y2="${yb + 6}" stroke="${EXT}" stroke-dasharray="3 3"/>
+    <line x1="${cx(0)}" y1="${yb}" x2="${cx(1)}" y2="${yb}" stroke="${DIM}" stroke-width="1.5"/>
+    <polygon points="${cx(0)},${yb} ${cx(0) + 8},${yb - 4} ${cx(0) + 8},${yb + 4}" fill="${DIM}"/>
+    <polygon points="${cx(1)},${yb} ${cx(1) - 8},${yb - 4} ${cx(1) - 8},${yb + 4}" fill="${DIM}"/>
+    <text x="${((cx(0) + cx(1)) / 2).toFixed(1)}" y="${yb + 22}" font-size="14" fill="#fff" font-weight="700" text-anchor="middle">S<tspan font-size="10" dy="3">L</tspan><tspan dy="-3"> = ${SL.toFixed(2)} mm</tspan></text>`;
+  /* D callout (right of last column) */
+  const dx = cx(2) + r + 14;
+  detail += `<line x1="${cx(2) + r * 0.7}" y1="${cy(2, 0) - r * 0.7}" x2="${dx}" y2="${cy(2, 0) - r * 0.7 - 12}" stroke="#fff"/>
+    <text x="${dx + 4}" y="${cy(2, 0) - r * 0.7 - 10}" font-size="14" fill="#fff" font-weight="700">D = ${D_.toFixed(2)} mm</text>`;
+  /* array note */
+  detail += `<text x="${dx + 4}" y="${(cy(2, 1) + 6).toFixed(1)}" font-size="13" fill="rgba(255,255,255,.7)" font-weight="500">Staggered array</text></svg>`;
+
+  /* ---- elevation with layer labels ---- */
+  const th = cad.total_h_mm, ex = -L * 0.06, ew = L * 1.09, ey = -(th + 0.8), eh = th + 1.1;
+  let side = `<svg viewBox="${ex} ${ey} ${ew} ${eh}" preserveAspectRatio="none" style="height:190px" role="img" aria-label="Elevation cross-section">
+    <rect x="0" y="${-(cad.t_base_mm + cad.H_pin_mm)}" width="${L}" height="${cad.H_pin_mm}" fill="#0E8AA3" opacity=".4"/>
+    <rect x="0" y="${-cad.t_base_mm}" width="${L}" height="${cad.t_base_mm}" fill="${baseFill}"/>`;
+  if (cad.C_mm > 0.005)
+    side += `<rect x="0" y="${-th}" width="${L}" height="${cad.C_mm}" fill="#86C4D0" opacity=".6"/>`;
+  side += `<line x1="0" x2="${L}" y1="${-th}" y2="${-th}" stroke="rgba(255,255,255,.7)" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`;
+  if (cad.pin_rects_side.length) {
+    const d = cad.pin_rects_side.map(([x, y, w, h]) => `M${x.toFixed(3)} ${(-(y + h)).toFixed(3)}h${w.toFixed(3)}v${h.toFixed(3)}h${(-w).toFixed(3)}z`).join("");
+    side += `<path d="${d}" fill="${pinFill}" stroke="rgba(0,0,0,.6)" stroke-width=".25" vector-effect="non-scaling-stroke"/>`;
+  }
+  side += `</svg>`;
+  const fr = y => ((y - ey) / eh * 100).toFixed(1);
+  const elevLabels = `<div class="elev-labels">
+      <span style="top:${fr(-th + cad.C_mm / 2)}%"><i style="background:#86C4D0"></i>Tip gap C = ${cad.C_mm.toFixed(2)}</span>
+      <span style="top:${fr(-(cad.t_base_mm + cad.H_pin_mm / 2))}%"><i style="background:${pinFill}"></i>Pin H = ${cad.H_pin_mm.toFixed(2)}</span>
+      <span style="top:${fr(-cad.t_base_mm / 2)}%"><i style="background:${baseFill}"></i>Base t = ${cad.t_base_mm.toFixed(2)}</span>
+    </div>`;
+
+  return {
+    views: `<p class="view-cap">Platform <small>(top view, mm)</small></p><div class="cad-box">${top}</div>
+            <p class="view-cap">Pin array detail <small>(to scale)</small></p><div class="cad-box">${detail}</div>
+            <p class="view-cap">Elevation <small>(side view, height exaggerated, mm)</small></p><div class="cad-box" style="margin-bottom:0"><div class="elev"><div class="elev-svg">${side}</div>${elevLabels}</div></div>`,
+    readouts: `<div class="readout"><span>Pin array (N<sub>T</sub> × N<sub>L</sub>)</span><span>${cad.N_T} × ${cad.N_L} = ${cad.N_pins}</span></div>
+               <div class="readout"><span>Plate W × L [mm]</span><span>${W.toFixed(1)} × ${L.toFixed(0)}</span></div>
+               <div class="readout"><span>t<sub>base</sub> / H / C [mm]</span><span>${cad.t_base_mm.toFixed(1)} / ${cad.H_pin_mm.toFixed(1)} / ${cad.C_mm.toFixed(2)}</span></div>`,
+  };
+}
+
+/* ==========================================================================
+   5. RENDER
+   ========================================================================== */
+const STACK_COLORS = ["var(--ink)", "var(--teal-5)", "var(--teal)"];   // JC, gap pad, cold plate
+let pending = false;
+function schedule() { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; render(); }); }
+
+function render() {
+  const msgs = document.getElementById("messages");
+  const cadEl = document.getElementById("cadViz"), cadRead = document.getElementById("cadReadouts");
+  const perfPanel = document.getElementById("perfPanel"), stackPanel = document.getElementById("stackPanel");
+  msgs.innerHTML = "";
+
+  const ntEl = document.getElementById("n_t_calc"), nlEl = document.getElementById("n_l_calc"), hintEl = document.getElementById("array_hint");
+
+  let built;
+  try { built = buildColdPlate(state); }
+  catch (e) {
+    cadEl.innerHTML = ""; cadRead.innerHTML = "";
+    ntEl.value = nlEl.value = "–"; hintEl.textContent = "";
+    perfPanel.style.display = stackPanel.style.display = "none";
+    msgs.innerHTML = `<div class="msg warn">Geometry / flow constraint: ${esc(e.message)}</div>`;
+    return;
+  }
+  ntEl.value = built.cad.N_T; nlEl.value = built.cad.N_L;
+  hintEl.textContent = `${built.cad.N_T} × ${built.cad.N_L} = ${built.cad.N_pins} pins fit · effective bypass ${built.cad.w_edge_mm.toFixed(2)} mm (${(built.cad.w_edge_mm / 2).toFixed(2)} mm per side)`;
+  const cv = cadViews(built.cad, state.material_preset, state.k_solid);
+  cadEl.innerHTML = cv.views; cadRead.innerHTML = cv.readouts;
+
+  let res;
+  try { res = evaluateColdPlate(built.plate, state); }
+  catch (e) {
+    perfPanel.style.display = stackPanel.style.display = "none";
+    const isVal = /Pins overlap|must be|greater than zero/.test(e.message);
+    msgs.innerHTML = isVal
+      ? `<div class="msg warn">Geometry / flow constraint: ${esc(e.message)}</div>`
+      : `<div class="msg err">Solver error (${esc(e.name)}): ${esc(e.message)}<pre>${esc(e.stack || "")}</pre></div>`;
+    return;
+  }
+
+  const { kpis, stackup, sweep } = res, flow = state.flow_rate_lpm;
+  perfPanel.style.display = stackPanel.style.display = "block";
+
+  document.getElementById("perfCharts").innerHTML =
+    lineChart({ title: "Pressure drop", xlabel: "Flow rate [LPM]", ylabel: "ΔP [kPa]",
+      xs: sweep.lpm_sweep, ys: sweep.dp_kPa, xmin: 0, xmax: sweep.lpm_max, ymin: 0, ymax: sweep.dp_y_max,
+      color: "var(--teal)", px: flow, py: kpis.pressure_drop_kPa, plabel: `${kpis.pressure_drop_kPa.toFixed(1)} kPa` }) +
+    lineChart({ title: "Junction temperature", xlabel: "Flow rate [LPM]", ylabel: "Temperature [°C]",
+      xs: sweep.lpm_sweep, ys: sweep.T_junction_C, xmin: 0, xmax: sweep.lpm_max, ymin: sweep.tj_y_min, ymax: sweep.tj_y_max,
+      color: "var(--ink)", px: flow, py: kpis.T_junction_C, plabel: `${kpis.T_junction_C.toFixed(1)} °C` }) +
+    lineChart({ title: "Cold plate resistance", xlabel: "Flow rate [LPM]", ylabel: "R_th,cp [K/W]",
+      xs: sweep.lpm_sweep, ys: sweep.R_coldplate_K_W, xmin: 0, xmax: sweep.lpm_max, ymin: sweep.rcp_y_min, ymax: sweep.rcp_y_max,
+      color: "var(--teal-3)", px: flow, py: kpis.R_coldplate_effective_K_W, plabel: `${kpis.R_coldplate_effective_K_W.toFixed(4)} K/W` });
+
+  document.getElementById("barChart").innerHTML = barChart(stackup, flow, STACK_COLORS);
+  document.getElementById("stackChart").innerHTML = stackChart(
+    { title: "Stackup vs flow rate (cumulative)", xlabel: "Flow rate [LPM]", ylabel: "Cumulative R_th [K/W]",
+      xmin: sweep.lpm_min, xmax: sweep.lpm_max, ymin: 0, ymax: sweep.stack_y_max },
+    sweep,
+    [sweep.R_jc_K_W, sweep.R_gp_K_W, sweep.R_coldplate_K_W],
+    STACK_COLORS, flow);
+  document.getElementById("stackLegend").innerHTML =
+    stackup.labels.map((l, i) => `<span><i style="background:${STACK_COLORS[i]}"></i>${l}</span>`).join("");
+}
+
+buildFields();
+render();
+
+/* ---- small API used by the assistant ---- */
+window.ObcTool = {
+  fields: FIELDS,
+  get: function () { return Object.assign({}, state); },
+  restore: function (snap) { Object.assign(state, snap); syncInputs(); schedule(); },
+  reset: function () { resetState(); syncInputs(); schedule(); },
+  set: function (key, value) {
+    if (key === 'material_preset') {
+      state.material_preset = value;
+      if (SOLID_MATERIALS[value]) state.k_solid = SOLID_MATERIALS[value].k;
+      syncInputs(); schedule(); return { value: value };
+    }
+    if (key === 'fluid_key') { state.fluid_key = value; syncInputs(); schedule(); return { value: value }; }
+    const min = FIELDS[key][1], max = FIELDS[key][2];
+    let v = Number(value);
+    if (key === 'N_fets') v = Math.round(v);
+    const c = clamp(v, min, max);
+    state[key] = c; syncInputs(); schedule();
+    return { value: c, clamped: c !== v, min: min, max: max };
+  },
+  point: function (over) {
+    const s = Object.assign({}, state, over || {});
+    const plate = buildColdPlate(s).plate;
+    const h = plate.solveHydraulics(s.flow_rate_lpm * 1e-3 / 60);
+    const t = plate.thermalPerformance(h, s.q_total_W, s.N_fets, s.T_inlet_C);
+    return {
+      Tj: t.T_junction_C, dp: h.pressure_drop_kPa, dp_array: h.dp_array_kPa, dp_manifold: h.dp_manifold_kPa,
+      bypass_pct: h.bypass_fraction * 100, fin_eff: t.fin_efficiency * 100, pump_W: h.pumping_power_W,
+      R_cp: t.R_cp_fet_K_W, R_sys: t.R_system_total_K_W,
+      labels: ["R_θJC", "R_θ gap pad", "R_θ cold plate"],
+      stack: [t.R_jc_fet_K_W, t.R_gp_fet_K_W, t.R_cp_fet_K_W],
+    };
+  },
+};
+})();
+</script>
+
+<script>
+/* ===== Junction Temperature tool ===== */
+(function () {
+  function setOff(el, off) { el.classList.toggle('is-off', off); }
+  function toggleMode() {
+    const ambient = document.getElementById('calc_mode').value === 'ambient';
+    document.getElementById('r_sa').disabled = !ambient;
+    document.getElementById('sa_container').style.opacity = ambient ? '1' : '0.4';
+    setOff(document.getElementById('ambient-resistor'), !ambient);
+    setOff(document.getElementById('ambient-node'), !ambient);
+    document.getElementById('temp_ta_box').hidden = !ambient;
+    document.getElementById('temp_ts_box').hidden = ambient;
+    calculate();
+  }
+  function compute(o) {
+    o = o || {};
+    const v = function (id) { return o[id] !== undefined ? o[id] : (parseFloat(document.getElementById(id).value) || 0); };
+    const mode = o.calc_mode || document.getElementById('calc_mode').value;
+    const P = v('power');
+    const TjMax = v('tj_max') || 125;
+    const Rjc = v('r_jc'), Rsa = v('r_sa');
+    const thick = v('thickness'), k = v('k_val'), area = v('area');
+    let Rtim = 0;
+    if (k > 0 && area > 0) Rtim = (thick / 1000) / (k * (area / 1000000));
+    let totalR, refTemp;
+    if (mode === 'ambient') { totalR = Rjc + Rtim + Rsa; refTemp = v('t_ambient'); }
+    else { totalR = Rjc + Rtim; refTemp = v('t_surface'); }
+    return { mode: mode, P: P, TjMax: TjMax, Rjc: Rjc, Rsa: Rsa, Rtim: Rtim, totalR: totalR, refTemp: refTemp, Tj: refTemp + P * totalR };
+  }
+  function calculate() {
+    const r = compute();
+    document.getElementById('out-rtim').innerText = r.Rtim.toFixed(3);
+    document.getElementById('out-rtotal').innerText = r.totalR.toFixed(3);
+    document.getElementById('out-tj').innerText = r.Tj.toFixed(1) + "°";
+    document.getElementById('limit-label').innerText = "Limit " + r.TjMax + " °C";
+    const percentage = Math.max(0, Math.min((r.Tj / r.TjMax) * 100, 100));
+    const bar = document.getElementById('temp-bar'), badge = document.getElementById('status-badge');
+    bar.style.width = percentage + "%";
+    if (r.Tj > r.TjMax) { bar.style.backgroundColor = "#FF5A5F"; badge.innerText = "Overheat"; badge.className = "badge is-hot"; }
+    else if (r.Tj > r.TjMax * 0.85) { bar.style.backgroundColor = "#F2A900"; badge.innerText = "Warning"; badge.className = "badge is-warn"; }
+    else { bar.style.backgroundColor = "#0E8AA3"; badge.innerText = "Stable"; badge.className = "badge is-stable"; }
+  }
+  const IDS = ['tj_max', 'power', 'thickness', 'k_val', 'area', 'r_jc', 'r_sa', 't_ambient', 't_surface'];
+  IDS.forEach(function (id) {
+    document.getElementById(id).addEventListener('input', calculate);
+  });
+  document.getElementById('calc_mode').addEventListener('change', toggleMode);
+  toggleMode();
+
+  /* ---- small API used by the assistant ---- */
+  const DEFAULTS = { power: '55', tj_max: '125', thickness: '0.5', k_val: '5.0', area: '128', r_jc: '0.19', r_sa: '0.5', t_ambient: '50', t_surface: '75', calc_mode: 'ambient' };
+  window.JunctionTool = {
+    compute: compute,
+    snapshot: function () {
+      const s = { calc_mode: document.getElementById('calc_mode').value };
+      IDS.forEach(function (id) { s[id] = document.getElementById(id).value; });
+      return s;
+    },
+    restore: function (s) {
+      IDS.forEach(function (id) { if (s[id] !== undefined) document.getElementById(id).value = s[id]; });
+      if (s.calc_mode) document.getElementById('calc_mode').value = s.calc_mode;
+      toggleMode();
+    },
+    reset: function () { this.restore(DEFAULTS); },
+    set: function (id, value) {
+      if (id === 'calc_mode') { document.getElementById('calc_mode').value = value; toggleMode(); }
+      else { document.getElementById(id).value = value; calculate(); }
+      return { value: value };
+    },
+  };
+})();
+</script>
+
+<script>
+/* ===== Thermal assistant (built-in helper, runs in the browser) ===== */
+(function () {
+  const root = document.getElementById('hb-chat');
+  const fab = document.getElementById('hb-fab');
+  const log = document.getElementById('hb-log');
+  const form = document.getElementById('hb-form');
+  const input = document.getElementById('hb-input');
+  const chipsEl = document.getElementById('hb-chips');
+  const ctxEl = document.getElementById('hb-ctx');
+  const dot = document.getElementById('hb-dot');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const undoStack = [];
+  let greeted = false;
+
+  const OBC = () => window.ObcTool;
+  const JN = () => window.JunctionTool;
+  const where = () => { const h = location.hash.replace('#', ''); return (h === 'obc' || h === 'junction') ? h : 'home'; };
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const rich = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+  const f = (x, d = 1) => Number(x).toFixed(d);
+
+  /* ---------- UI ---------- */
+  function add(text, who) {
+    const d = document.createElement('div');
+    d.className = 'hb-msg ' + who;
+    d.innerHTML = who === 'bot' ? rich(text) : esc(text);
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+  }
+  function botSay(text) {
+    if (reduce) { add(text, 'bot'); return; }
+    const t = document.createElement('div');
+    t.className = 'hb-msg bot hb-typing';
+    t.innerHTML = '<i></i><i></i><i></i>';
+    log.appendChild(t);
+    log.scrollTop = log.scrollHeight;
+    setTimeout(function () { t.remove(); add(text, 'bot'); }, 320);
+  }
+  const CHIPS = {
+    home: ['What can you do?', 'Open the OBC tool', 'Open the junction calculator'],
+    obc: ['Summarize my results', 'Minimum flow for T_J <= 140 °C', 'Use aluminum', 'What is bypass flow?'],
+    junction: ['Summarize my results', 'Max power at my limit', 'Set power to 30 W', 'What is R_θ-TIM?'],
+  };
+  function renderChips() {
+    chipsEl.innerHTML = '';
+    CHIPS[where()].forEach(function (c) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'hb-chip'; b.textContent = c;
+      b.addEventListener('click', function () { send(c); });
+      chipsEl.appendChild(b);
+    });
+  }
+  function renderCtx() {
+    ctxEl.textContent = { home: 'Dashboard', obc: 'On-board charger', junction: 'Junction calculator' }[where()];
+  }
+  function setOpen(open) {
+    root.classList.toggle('is-open', open);
+    fab.setAttribute('aria-expanded', String(open));
+    fab.setAttribute('aria-label', open ? 'Close thermal assistant' : 'Open thermal assistant');
+    if (open) {
+      dot.hidden = true;
+      if (!greeted) { greeted = true; botSay(greeting()); }
+      setTimeout(function () { input.focus(); }, 60);
+    } else {
+      fab.focus();
+    }
+  }
+  fab.addEventListener('click', function () { setOpen(!root.classList.contains('is-open')); });
+  document.getElementById('hb-close').addEventListener('click', function () { setOpen(false); });
+  root.addEventListener('keydown', function (e) { if (e.key === 'Escape' && root.classList.contains('is-open')) setOpen(false); });
+  window.addEventListener('hashchange', function () { renderCtx(); renderChips(); });
+  form.addEventListener('submit', function (e) { e.preventDefault(); send(input.value); });
+
+  function send(text) {
+    text = String(text || '').trim();
+    if (!text) return;
+    add(text, 'user');
+    input.value = '';
+    let out;
+    try { out = answer(text); } catch (err) { out = 'Something went wrong while reading that (' + err.message + '). Please try rephrasing.'; }
+    if (out) botSay(out);
+  }
+
+  /* ---------- parsing helpers ---------- */
+  const NUM = '(-?\\d+(?:\\.\\d+)?)';
+  function grab(t, re) {
+    const rx = new RegExp('(?:' + re.source + ')\\s*(?:to|=|at|of|is|:|be)?\\s*(?:about|around|~)?\\s*' + NUM, 'i');
+    const m = t.match(rx);
+    return m ? parseFloat(m[1]) : null;
+  }
+  function tempTarget(t) {
+    let m = t.match(/(\d+(?:\.\d+)?)\s*(?:°\s*c|°|deg(?:rees)?(?:\s*c)?|\bc\b)/);
+    if (!m) m = t.match(/(?:<=?|below|under|at most|within|keep(?:\s+\w+){0,3}?|stay(?:\s+\w+){0,2}?|hold|target|limit)\s*(\d+(?:\.\d+)?)/);
+    return m ? parseFloat(m[1]) : null;
+  }
+
+  // key, label, unit, keyword regex
+  const OBC_KW = [
+    ['flow_rate_lpm', 'flow rate', 'LPM', /(?:flow(?:\s*rate)?|lpm|coolant flow)/],
+    ['q_total_W', 'heat load', 'W', /(?:heat\s*load|heat|total\s*power|power|\bq\b|load)/],
+    ['T_inlet_C', 'inlet temperature', '°C', /(?:inlet(?:\s*temp(?:erature)?)?|coolant temp(?:erature)?)/],
+    ['N_fets', 'FET count', '', /(?:fets?|transistors?|devices)/],
+    ['h_ambient', 'ambient HTC', 'W/m²K', /(?:ambient\s*(?:htc|h\b)|htc)/],
+    ['T_ambient_C', 'ambient temperature', '°C', /(?:ambient(?:\s*temp(?:erature)?)?)/],
+    ['t_base_mm', 'base thickness', 'mm', /(?:base(?:\s*plate)?(?:\s*thickness)?)/],
+    ['k_solid', 'conductivity', 'W/mK', /(?:conductivity|\bk\b)/],
+    ['D_mm', 'pin diameter', 'mm', /(?:pin\s*diameter|diameter|\bd\b)/],
+    ['H_pin_mm', 'pin height', 'mm', /(?:pin\s*height|height|\bh\b)/],
+    ['S_T_mm', 'transverse pitch', 'mm', /(?:(?:transverse\s*)?pitch\s*s?_?t\b|\bs_?t\b|transverse\s*pitch)/],
+    ['S_L_mm', 'longitudinal pitch', 'mm', /(?:(?:longitudinal\s*)?pitch\s*s?_?l\b|\bs_?l\b|longitudinal\s*pitch)/],
+    ['L_mm', 'plate length', 'mm', /(?:length|\bl\b)/],
+    ['W_mm', 'plate width', 'mm', /(?:plate\s*width|(?<!bypass\s)width)/],
+    ['w_channel_edge_mm', 'minimum bypass', 'mm', /(?:bypass(?:\s*width)?|edge\s*gap)/],
+    ['C_mm', 'tip gap', 'mm', /(?:tip\s*(?:gap|clearance)|clearance|\bc\b)/],
+    ['Rth_jc', 'R_θJC', 'K/W', /(?:r_?th_?jc|rth\s*jc|r_?jc|junction[- ]to[- ]case)/],
+    ['Rth_tgp', 'gap pad resistance', 'K/W', /(?:gap\s*pad|rth_?tgp)/],
+  ];
+  const JN_KW = [
+    ['power', 'power per FET', 'W', /(?:power(?:\s*per\s*fet)?|watts?|dissipation|\bp\b)/],
+    ['tj_max', 'T_J limit', '°C', /(?:limit|tj_?max|t_j,?max|max(?:imum)?\s*(?:junction\s*)?temp(?:erature)?)/],
+    ['thickness', 'pad thickness', 'mm', /(?:thickness|gap\s*pad\s*thickness)/],
+    ['k_val', 'pad conductivity', 'W/mK', /(?:conductivity|\bk\b)/],
+    ['area', 'contact area', 'mm²', /(?:contact\s*area|area)/],
+    ['r_jc', 'R_θJC', 'K/W', /(?:r_?th_?jc|r_?jc|junction[- ]to[- ]case)/],
+    ['r_sa', 'R_θSA', 'K/W', /(?:r_?th_?sa|r_?sa|sink[- ]to[- ]air|heat\s*sink)/],
+    ['t_surface', 'plate surface temperature', '°C', /(?:surface(?:\s*temp(?:erature)?)?|plate(?:\s*temp(?:erature)?)?|\bt_?s\b)/],
+    ['t_ambient', 'ambient temperature', '°C', /(?:ambient(?:\s*air)?(?:\s*temp(?:erature)?)?|\bt_?a\b)/],
+  ];
+  const MAT_NAME = { copper: 'copper', aluminum: 'aluminum 6061', al6063: 'aluminum 6063' };
+  const FLUID_NAME = { weg5050: '50/50 WEG', water: 'water' };
+
+  function pick(t) {
+    if (/\b(obc|on[- ]?board|charger)\b/.test(t)) return 'obc';
+    if (/\b(calculator|thermal network|junction tool)\b/.test(t)) return 'junction';
+    const w = where();
+    if (w !== 'home') return w;
+    if (/(flow|lpm|pin|pitch|diameter|fluid|coolant|fets?|inlet|aluminum|aluminium|copper|water|glycol|bypass|tip|columns?|chamber|heat load)/.test(t)) return 'obc';
+    if (/(power|limit|thickness|area|rsa|rjc|surface|margin|\btim\b|headroom|watts?)/.test(t)) return 'junction';
+    return null;
+  }
+  function goTo(tool) { if (where() !== tool) location.hash = '#' + tool; }
+
+  /* ---------- OBC: read / set / query ---------- */
+  function obcPoint(over) { return OBC().point(over); }
+  function obcSummary() {
+    const O = OBC(); let p;
+    try { p = O.point(); } catch (e) { return 'The current geometry isn\'t valid (' + e.message + '). Adjust the pin diameter or pitch and ask again.'; }
+    const s = O.get();
+    const order = p.stack.map(function (v, i) { return [v, p.labels[i]]; }).sort(function (a, b) { return b[0] - a[0]; });
+    const top = order[0], share = top[0] / p.R_sys * 100;
+    const portShare = p.dp_manifold / p.dp * 100;
+    let msg = '**On-board charger** at **' + f(s.flow_rate_lpm) + ' LPM**, **' + f(s.q_total_W, 0) + ' W** across ' + s.N_fets + ' FETs (' + f(s.q_total_W / s.N_fets) + ' W each):\n' +
+      '• T_J **' + f(p.Tj) + ' °C** (inlet ' + f(s.T_inlet_C, 0) + ' °C, +' + f(p.Tj - s.T_inlet_C) + ' °C)\n' +
+      '• Pressure drop **' + f(p.dp) + ' kPa** (array ' + f(p.dp_array) + ', ports ' + f(p.dp_manifold) + ')\n' +
+      '• Cold plate **' + f(p.R_cp, 4) + ' K/W**, system **' + f(p.R_sys, 4) + ' K/W** (per FET)\n' +
+      '• Bypass flow **' + f(p.bypass_pct) + ' %**, fin efficiency ' + f(p.fin_eff) + ' %, pumping ' + f(p.pump_W, 2) + ' W';
+    const notes = [];
+    notes.push('Largest thermal contributor: **' + top[1] + '** (' + f(share, 0) + ' % of the stackup).');
+    if (portShare > 60) notes.push(f(portShare, 0) + ' % of the pressure drop is in the inlet/outlet ports, so pin changes barely move it.');
+    if (p.bypass_pct > 30) notes.push('About ' + f(p.bypass_pct, 0) + ' % of the flow bypasses the pins; a smaller bypass width or tip gap pushes more coolant through them.');
+    return msg + '\n\n' + notes.join(' ');
+  }
+  function obcSet(t) {
+    const O = OBC(); if (!O) return null;
+    const prev = O.get(); let before = null;
+    try { before = O.point(); } catch (e) { /* invalid starting geometry */ }
+    const done = [], keys = new Set();
+    OBC_KW.forEach(function (row) {
+      const key = row[0], label = row[1], unit = row[2];
+      let v = grab(t, row[3]);
+      if (v === null && key === 'flow_rate_lpm') { const m = t.match(/(\d+(?:\.\d+)?)\s*lpm/); if (m) v = parseFloat(m[1]); }
+      if (v === null) return;
+      const r = O.set(key, v); keys.add(key);
+      done.push('**' + label + ' ' + f(r.value, O.fields[key][4]) + (unit ? ' ' + unit : '') + '**' + (r.clamped ? ' (limited to ' + r.min + '–' + r.max + ')' : ''));
+    });
+    if (!keys.has('S_T_mm') && !keys.has('S_L_mm')) {
+      const v = grab(t, /pitch/);
+      if (v !== null) { const a = O.set('S_T_mm', v), b = O.set('S_L_mm', v); done.push('**pitch ' + f(a.value, 2) + ' mm** (both directions)'); }
+    }
+    const matMentioned = /(use|switch|set|change|try|with|material|instead|make)/.test(t);
+    const mat = /\b(alumin(?:i)?um|6061)\b/.test(t) ? 'aluminum' : /6063/.test(t) ? 'al6063' : /\bcopper\b/.test(t) ? 'copper' : null;
+    if (mat && matMentioned) { O.set('material_preset', mat); done.push('**material ' + MAT_NAME[mat] + '**'); }
+    const fl = /\bwater\b/.test(t) ? 'water' : /(\bweg\b|glycol|50\/50)/.test(t) ? 'weg5050' : null;
+    if (fl && /(use|switch|set|change|try|with|fluid|coolant|instead|make)/.test(t)) { O.set('fluid_key', fl); done.push('**coolant ' + FLUID_NAME[fl] + '**'); }
+    if (!done.length) return null;
+    undoStack.push({ tool: 'obc', snap: prev });
+    let after = null, errMsg = null;
+    try { after = O.point(); } catch (e) { errMsg = e.message; }
+    let msg = 'Done: ' + done.join(', ') + '.';
+    if (errMsg) return msg + ' That geometry isn\'t valid (' + errMsg + '). Say "undo" to go back.';
+    if (before) msg += '\nT_J **' + f(before.Tj) + ' → ' + f(after.Tj) + ' °C**, pressure drop **' + f(before.dp) + ' → ' + f(after.dp) + ' kPa**, cold plate **' + f(before.R_cp, 4) + ' → ' + f(after.R_cp, 4) + ' K/W**.';
+    else msg += '\nT_J **' + f(after.Tj) + ' °C**, pressure drop **' + f(after.dp) + ' kPa**.';
+    return msg;
+  }
+  function scanFlow(pred, down) {
+    const O = OBC();
+    for (let i = 0; i <= 238; i++) {
+      const fl = down ? 60 - i * 0.25 : 0.5 + i * 0.25;
+      let p; try { p = O.point({ flow_rate_lpm: fl }); } catch (e) { return { err: e.message }; }
+      if (pred(p)) return { flow: fl, p: p };
+    }
+    return null;
+  }
+  function obcQuery(t) {
+    const O = OBC(); if (!O) return null;
+    const asksFlow = /(flow|lpm)/.test(t);
+    const dpm = t.match(/(\d+(?:\.\d+)?)\s*kpa/);
+    const tg = tempTarget(t);
+    if (asksFlow && dpm) {
+      const lim = parseFloat(dpm[1]); const r = scanFlow(function (p) { return p.dp <= lim; }, true);
+      if (r && r.err) return 'I can\'t evaluate that geometry (' + r.err + ').';
+      if (!r) return 'Even at 0.5 LPM the pressure drop is above **' + f(lim) + ' kPa**, mostly from the ports, so flow alone can\'t get there.';
+      return 'You can run up to about **' + f(r.flow, 2) + ' LPM** before the pressure drop passes **' + f(lim) + ' kPa**. At that flow T_J is **' + f(r.p.Tj) + ' °C**. Say "flow ' + f(r.flow, 1) + '" to apply it.';
+    }
+    if (asksFlow && tg !== null && /(min|lowest|least|need|require|what|how|enough|keep|hold|achieve|reach|get|under|below|<)/.test(t)) {
+      const r = scanFlow(function (p) { return p.Tj <= tg; }, false);
+      if (r && r.err) return 'I can\'t evaluate that geometry (' + r.err + ').';
+      if (!r) {
+        let hi; try { hi = O.point({ flow_rate_lpm: 60 }); } catch (e) { return null; }
+        return 'Even at 60 LPM, T_J is **' + f(hi.Tj) + ' °C**, above **' + f(tg) + ' °C**. Flow isn\'t the limit here: R_θJC + R_θ gap pad alone is ' + f(hi.stack[0] + hi.stack[1], 4) + ' K/W. Try a lower inlet temperature, a lower heat load, or more FETs.';
+      }
+      return 'To hold T_J at or below **' + f(tg) + ' °C** you need about **' + f(r.flow, 2) + ' LPM**. At that flow the pressure drop is **' + f(r.p.dp) + ' kPa** and pumping power **' + f(r.p.pump_W, 2) + ' W** (all other inputs unchanged). Say "flow ' + f(r.flow, 1) + '" to apply it.';
+    }
+    if (/(bottleneck|biggest|largest|dominant|dominates|main contributor|what limits|where.*resistance)/.test(t)) {
+      let p; try { p = O.point(); } catch (e) { return null; }
+      const rows = p.stack.map(function (v, i) { return [v, p.labels[i]]; }).sort(function (a, b) { return b[0] - a[0]; });
+      return 'Thermal resistance by contributor:\n' + rows.map(function (r) { return '• **' + r[1] + '** ' + f(r[0], 4) + ' K/W (' + f(r[0] / p.R_sys * 100, 0) + ' %)'; }).join('\n');
+    }
+    return null;
+  }
+
+  /* ---------- Junction: read / set / query ---------- */
+  function jnSummary() {
+    const r = JN().compute();
+    const margin = r.TjMax - r.Tj;
+    const status = r.Tj > r.TjMax ? 'Overheat' : r.Tj > r.TjMax * 0.85 ? 'Warning' : 'Stable';
+    const pmax = (r.TjMax - r.refTemp) / r.totalR;
+    return '**Junction temperature** **' + f(r.Tj) + ' °C** against a limit of **' + f(r.TjMax, 0) + ' °C**: **' + status + '** (' + (margin >= 0 ? f(margin) + ' °C of margin' : f(-margin) + ' °C over') + ').\n' +
+      '• Total resistance **' + f(r.totalR, 3) + ' K/W** = R_θJC ' + f(r.Rjc, 3) + ' + TIM ' + f(r.Rtim, 3) + (r.mode === 'ambient' ? ' + R_θSA ' + f(r.Rsa, 3) : '') + '\n' +
+      '• Reference ' + f(r.refTemp, 0) + ' °C (' + (r.mode === 'ambient' ? 'ambient air' : 'plate surface') + '), power ' + f(r.P, 1) + ' W per FET\n' +
+      '• Max power at this limit: **' + f(pmax, 1) + ' W**';
+  }
+  function jnSet(t) {
+    const J = JN(); if (!J) return null;
+    const snap = J.snapshot(); const before = J.compute(); const done = [];
+    JN_KW.forEach(function (row) {
+      const v = grab(t, row[3]); if (v === null) return;
+      J.set(row[0], v);
+      done.push('**' + row[1] + ' ' + v + (row[2] ? ' ' + row[2] : '') + '**');
+    });
+    if (/(liquid|cold\s*plate)/.test(t) && /(mode|switch|use|set|change|cooling|go to|try)/.test(t)) { J.set('calc_mode', 'sink'); done.push('**liquid cold plate mode**'); }
+    else if (/(air[- ]?cool|ambient air mode|air mode|ambient mode|switch to (?:ambient|air))/.test(t)) { J.set('calc_mode', 'ambient'); done.push('**ambient air mode**'); }
+    if (!done.length) return null;
+    undoStack.push({ tool: 'junction', snap: snap });
+    const a = J.compute();
+    const status = a.Tj > a.TjMax ? 'Overheat' : a.Tj > a.TjMax * 0.85 ? 'Warning' : 'Stable';
+    return 'Done: ' + done.join(', ') + '.\nT_J **' + f(before.Tj) + ' → ' + f(a.Tj) + ' °C** (limit ' + f(a.TjMax, 0) + ' °C, **' + status + '**).';
+  }
+  function jnQuery(t) {
+    const J = JN(); if (!J) return null; const r = J.compute();
+    if (/(max(?:imum)?\s*power|how much power|what power|highest power|power (?:can|could) i|can i run|how many watts|how much can)/.test(t)) {
+      const p = (r.TjMax - r.refTemp) / r.totalR;
+      if (p <= 0) return 'The reference temperature (' + f(r.refTemp, 0) + ' °C) is already at or above the limit, so no power is allowed.';
+      return 'With the current setup you can dissipate up to **' + f(p, 1) + ' W per FET** before T_J reaches **' + f(r.TjMax, 0) + ' °C**. Say "power ' + f(Math.floor(p * 10) / 10, 1) + '" to apply it.';
+    }
+    if (/(need|required|max(?:imum)?|what).{0,25}(rsa|r_?sa|heat\s*sink|sink)/.test(t)) {
+      if (r.mode !== 'ambient') return 'In liquid cold plate mode there is no R_θSA. The plate surface can be at most **' + f(r.TjMax - r.P * r.totalR, 1) + ' °C** to hold T_J at the limit.';
+      const need = (r.TjMax - r.refTemp) / r.P - r.Rjc - r.Rtim;
+      if (need <= 0) return 'Even with a perfect heat sink the junction would exceed the limit. Reduce power, thin the pad, or use a higher-k pad.';
+      return 'To hold T_J at **' + f(r.TjMax, 0) + ' °C** at ' + f(r.P, 1) + ' W you need R_θSA of **' + f(need, 3) + ' K/W** or lower (currently ' + f(r.Rsa, 3) + ').';
+    }
+    if (/(margin|headroom|how close|how far)/.test(t)) {
+      const m = r.TjMax - r.Tj;
+      return m >= 0 ? 'You have **' + f(m) + ' °C** of margin to the ' + f(r.TjMax, 0) + ' °C limit.' : 'You are **' + f(-m) + ' °C over** the ' + f(r.TjMax, 0) + ' °C limit.';
+    }
+    if (/(bottleneck|biggest|largest|dominant|dominates|contributes? most|what limits)/.test(t)) {
+      const rows = [['R_θJC', r.Rjc], ['Gap pad (TIM)', r.Rtim]].concat(r.mode === 'ambient' ? [['R_θSA', r.Rsa]] : []);
+      rows.sort(function (a, b) { return b[1] - a[1]; });
+      return 'Resistance by contributor:\n' + rows.map(function (x) { return '• **' + x[0] + '** ' + f(x[1], 3) + ' K/W (' + f(x[1] / r.totalR * 100, 0) + ' %)'; }).join('\n');
+    }
+    return null;
+  }
+
+  /* ---------- glossary ---------- */
+  const GLOSS = [
+    [/(who are you|are you (?:an )?ai|chatgpt|llm|claude|are you real)/, 'I\'m a built-in helper that runs entirely in your browser. I read your live inputs, run the same solver the tools use, and explain the results. I\'m not a general AI model, so I stick to this dashboard.'],
+    [/(thanks|thank you|cheers)/, 'You\'re welcome. Ask anytime.'],
+    [/(r_?th_?jc|r_?jc|junction[- ]to[- ]case|theta ?jc)/, '**R_θJC** is the junction-to-case thermal resistance (K/W): the path from the FET die to the top of its package. It comes from the datasheet (default 0.19 K/W).'],
+    [/(\btim\b|gap pad|thermal interface|r_?th_?-?tim|\bpad\b)/, 'The **gap pad (TIM)** fills the gap between the FET and the cold surface. Its resistance is thickness ÷ (k × area), so a thinner, higher-k or larger-area pad lowers it.'],
+    [/(r_?sa|sink[- ]to[- ]air|heat\s*sink)/, '**R_θSA** is the sink-to-air thermal resistance (K/W) in ambient air mode. A lower value means a better heat sink or more airflow. It is not used in liquid cold plate mode.'],
+    [/(stable|warning|overheat|badge|status colou?r|85 ?%)/, 'The status compares T_J with your limit: **Stable** below 85 % of the limit, **Warning** between 85 % and 100 %, **Overheat** above the limit.'],
+    [/(\bt_?j\b|junction temp)/, '**T_J** is the junction (die) temperature. It equals the reference temperature plus power × total thermal resistance.'],
+    [/bypass/, '**Bypass flow** is coolant that skips the pin array through the side strips and over the pin tips. It does little cooling, so a smaller bypass width or tip gap sends more flow through the pins.'],
+    [/(fin eff|efficiency)/, '**Fin efficiency** is how well each pin conducts heat to its tip compared with an ideal pin at base temperature. Low values mean the pins are too tall or thin, or the material is too resistive.'],
+    [/(pumping|pump power)/, '**Pumping power** is flow rate × pressure drop: the hydraulic power the pump must deliver to push the coolant through the plate.'],
+    [/(pressure drop|\bdp\b|manifold|\bports?\b)/, '**Pressure drop** is split into the pin array and the inlet/outlet ports. At typical flows the ports often dominate, so changing the pins mostly affects the thermal side.'],
+    [/(stack ?up|base conduction|fin convection|fluid cal|calorimetric|constriction|spreading|cold plate resistance)/, 'The stackup is per FET and splits (T_J − T_inlet) ÷ power per FET into three parts: **R_θJC** (datasheet value), **R_θ gap pad** (your gap pad input) and **R_θ cold plate** = (T_J − T_inlet) ÷ P_fet − R_θ gap pad − R_θJC.'],
+    [/(kink|bump|wiggle|15 ?lpm|reynolds|regime)/, 'The small kink near 15 LPM is where the correlations switch regime (Reynolds number around 1000). It comes from the model, not from the page.'],
+    [/(platform|planform|schematic|chamber view|elevation)/, 'The **Cold plate schematic** shows a labelled top-down **Platform** view (L, W, bypass strips and flow direction), a to-scale **Pin array detail** (D, S_T, S_L) and an **Elevation** cross-section of the base, pins and tip gap.'],
+    [/(v2g|bi-?directional|\bobc\b|on-?board charger)/, 'An **on-board charger (OBC)** converts grid AC to battery DC. A bi-directional OBC can also send power back (V2G), and in both directions the FETs make heat that the cold plate has to remove.'],
+    [/(cooling mode|liquid cold plate|ambient air)/, '**Ambient air** adds the heat-sink resistance R_θSA and uses air temperature as the reference. **Liquid cold plate** drops R_θSA and uses the plate surface temperature instead.'],
+    [/(tip (?:gap|clearance))/, 'The **tip gap** is the clearance above the pins. Flow through it bypasses the pins, so smaller gaps improve cooling but need tighter tolerances.'],
+    [/(pitch|staggered|pin diameter)/, '**Pitch** is the spacing between pin centers (S_T across the flow, S_L along it). Tighter pitch and bigger pins add surface area but raise the pressure drop.'],
+    [/(copper|alumin|conductivity|material)/, 'Copper (about 398 W/mK) spreads heat much better than aluminum (167–201 W/mK), which lowers base conduction and raises fin efficiency. Say "use aluminum" to compare.'],
+  ];
+  const HELP = 'I can:\n• **Summarize** your current results\n• **Change inputs**, e.g. "flow 14", "use aluminum", "power 30", "limit 140"\n• **Answer what-ifs**: minimum flow for a T_J target, max power at your limit, required heat sink\n• **Explain terms** like bypass flow, R_θ-TIM or the stackup\n• **Open** a tool, **undo**, or **reset**';
+  function greeting() {
+    const w = where();
+    if (w === 'obc') return 'Hi! You\'re in the **On-board charger** tool. Ask me to summarize the results, change an input (for example "flow 14 lpm"), or find the minimum flow for a T_J target.';
+    if (w === 'junction') return 'Hi! You\'re in the **Junction calculator**. Ask me to summarize, change an input (for example "power 30"), or find the maximum power at your limit.';
+    return 'Hi! I can open either tool, explain terms, and run what-if checks. Pick a suggestion below or type a request.';
+  }
+
+  /* ---------- router ---------- */
+  function doUndo() {
+    const u = undoStack.pop();
+    if (!u) return 'Nothing to undo yet.';
+    if (u.tool === 'obc') OBC().restore(u.snap); else JN().restore(u.snap);
+    return 'Undone. The ' + (u.tool === 'obc' ? 'on-board charger' : 'junction calculator') + ' inputs are back to what they were.';
+  }
+  function doReset(t) {
+    const tool = pick(t);
+    if (!tool) return 'Open a tool first, then say "reset".';
+    goTo(tool);
+    (tool === 'obc' ? OBC() : JN()).reset();
+    return 'Reset the ' + (tool === 'obc' ? 'on-board charger' : 'junction calculator') + ' to its default inputs.';
+  }
+
+  function answer(raw) {
+    const t = raw.toLowerCase().replace(/[–−]/g, '-').replace(/≤/g, '<=').replace(/≥/g, '>=').trim();
+    if (!t) return null;
+
+    const go = /\b(open|go to|go back|take me|switch to|launch|navigate)\b/.test(t);
+    if (go && /\b(home|dashboard|main|landing|start)\b/.test(t)) { goTo('dashboard'); return 'Taking you to the dashboard.'; }
+    if (go && /(obc|on[- ]?board|cold\s*plate|charger)/.test(t) && !/liquid/.test(t)) { goTo('obc'); return 'Opening the **On-board charger** tool.'; }
+    if (go && /(junction|calculator|thermal network)/.test(t)) { goTo('junction'); return 'Opening the **Junction calculator**.'; }
+
+    if (/^(hi|hello|hey|yo|good (?:morning|afternoon|evening))\b/.test(t) && t.length < 24) return greeting();
+    if (/\b(help|what can you do|capabilities|commands)\b/.test(t)) return HELP;
+    if (/\bundo\b|^(revert|put it back)/.test(t)) return doUndo();
+    if (/\breset\b/.test(t)) return doReset(t);
+
+    const tool = pick(t);
+    let changed = null, q = null;
+    if (tool === 'obc') { changed = obcSet(t); q = obcQuery(t); }
+    else if (tool === 'junction') { changed = jnSet(t); q = jnQuery(t); }
+    if (changed && tool !== where()) { goTo(tool); changed = 'Switched to the ' + (tool === 'obc' ? 'on-board charger' : 'junction calculator') + ' tool. ' + changed; }
+    if (changed && q) return changed + '\n\n' + q;
+    if (changed) return changed;
+    if (q) return q;
+
+    const wantsSummary = /(summar|my results|the results|current results|\bresults\b|overview|status|how am i doing|how'?s it looking|report|numbers)/.test(t) ||
+      /what(?:'s| is) (?:the |my |our )?(?:current )?(?:junction temp|tj\b|t_j)/.test(t);
+    if (wantsSummary) {
+      const w = tool || where();
+      if (w === 'obc') return obcSummary();
+      if (w === 'junction') return jnSummary();
+      return 'Open a tool first and I\'ll summarize it. Say "open the OBC tool" or "open the junction calculator".';
+    }
+
+    for (let i = 0; i < GLOSS.length; i++) if (GLOSS[i][0].test(t)) return GLOSS[i][1];
+
+    return 'I didn\'t catch that. Try "summarize my results", "flow 14", "minimum flow for T_J <= 140", or "what is bypass flow?". Say "help" to see everything I can do.';
+  }
+
+  renderCtx();
+  renderChips();
+})();
+</script>
+</body>
+</html>
