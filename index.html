@@ -518,6 +518,7 @@
             <div class="field" data-f="N_fets"></div>
             <div class="field" data-f="Rth_tgp"></div>
             <div class="field" data-f="Rth_jc"></div>
+            <div class="field" data-f="A_fet_mm2"></div>
             <div class="field" data-f="T_ambient_C"></div>
             <div class="field" data-f="h_ambient"></div>
           </div>
@@ -1017,7 +1018,7 @@ function buildColdPlate(s) {
   const solid = { name: preset.name || "Custom Metal", k: +s.k_solid, t_base: s.t_base_mm * 1e-3,
                   rho: preset.rho || 8960, cp: preset.cp || 385 };
   const fet = { Rth_jc: +s.Rth_jc, Rth_tgp: +s.Rth_tgp, t_tgp: 0.508e-3, k_tgp: 5.0,
-                area_contact: 128.1e-6, w_fet: null, l_fet: null, fets_per_row: 2 };
+                area_contact: (+s.A_fet_mm2) * 1e-6, w_fet: null, l_fet: null, fets_per_row: 2 };
   const plate = new ColdPlateFlow({
     solid, fluid: FLUID_MATERIALS[s.fluid_key], fet,
     D: s.D_mm * 1e-3, H_pin: s.H_pin_mm * 1e-3, C: s.C_mm * 1e-3,
@@ -1056,10 +1057,11 @@ function evaluateColdPlate(plate, s) {
 const DEFAULT_STATE = {
   flow_rate_lpm: 10.0, q_total_W: 660.0, T_inlet_C: 55.0, T_ambient_C: 55.0, h_ambient: 5.0,
   fluid_key: "weg5050", material_preset: "copper", k_solid: 398.0, t_base_mm: 2.0,
-  N_fets: 8, Rth_jc: 0.1900, Rth_tgp: 0.7931, w_channel_edge_mm: 3.142,
+  N_fets: 8, Rth_jc: 0.1900, Rth_tgp: 0.7931, A_fet_mm2: 128.1,, w_channel_edge_mm: 3.142,
   L_mm: 123.0, W_mm: 38.842, D_mm: 1.5, H_pin_mm: 8.8, C_mm: 0.20, S_T_mm: 3.8, S_L_mm: 3.8,
 };
-// key: [label, min, max, step, decimals]
+// key: [label, min, max, step, decima
+  ls]
 const FIELDS = {
   flow_rate_lpm: ["Flow rate [LPM]", 0.5, 60, 0.5, 1],
   q_total_W: ["Heat load Q [W]", 50, 5000, 20, 0],
@@ -1067,6 +1069,7 @@ const FIELDS = {
   N_fets: ["FET count", 1, 32, 1, 0],
   Rth_jc: ["R<sub>θJC</sub> [K/W]", 0.01, 2, 0.01, 4],
   Rth_tgp: ["R<sub>θ</sub> gap pad [K/W]", 0.01, 3, 0.02, 4],
+  A_fet_mm2: ["Area/FET A<sub>FET</sub> [mm²]", 10, 1000, 1, 1],
   h_ambient: ["Ambient HTC [W/m²K]", 0, 100, 1, 0],
   T_ambient_C: ["Ambient temperature [°C]", -50, 150, 1, 0],
   k_solid: ["Conductivity k [W/mK]", 10, 1000, 5, 0],
@@ -1620,6 +1623,7 @@ window.ObcTool = {
     ['flow_rate_lpm', 'flow rate', 'LPM', /(?:flow(?:\s*rate)?|lpm|coolant flow)/],
     ['q_total_W', 'heat load', 'W', /(?:heat\s*load|heat|total\s*power|power|\bq\b|load)/],
     ['T_inlet_C', 'inlet temperature', '°C', /(?:inlet(?:\s*temp(?:erature)?)?|coolant temp(?:erature)?)/],
+    ['A_fet_mm2', 'area per FET', 'mm²', /(?:fet\s*(?:surface\s*|contact\s*)?area|area\s*(?:per|\/)\s*fet|die\s*area)/],
     ['N_fets', 'FET count', '', /(?:fets?|transistors?|devices)/],
     ['h_ambient', 'ambient HTC', 'W/m²K', /(?:ambient\s*(?:htc|h\b)|htc)/],
     ['T_ambient_C', 'ambient temperature', '°C', /(?:ambient(?:\s*temp(?:erature)?)?)/],
@@ -1806,6 +1810,7 @@ window.ObcTool = {
   const GLOSS = [
     [/(who are you|are you (?:an )?ai|chatgpt|llm|claude|are you real)/, 'I\'m a built-in helper that runs entirely in your browser. I read your live inputs, run the same solver the tools use, and explain the results. I\'m not a general AI model, so I stick to this dashboard.'],
     [/(thanks|thank you|cheers)/, 'You\'re welcome. Ask anytime.'],
+    [/(fet (?:surface |contact )?area|area per fet|area\/fet|footprint)/, '**Area/FET** is the contact area of one FET on the cold plate (default 128.1 mm²). It sets how far heat spreads into the base, so a larger area lowers the 3D constriction part of **R_θ cold plate**. It does not change the gap pad value, which is its own input.'],
     [/(r_?th_?jc|r_?jc|junction[- ]to[- ]case|theta ?jc)/, '**R_θJC** is the junction-to-case thermal resistance (K/W): the path from the FET die to the top of its package. It comes from the datasheet (default 0.19 K/W).'],
     [/(\btim\b|gap pad|thermal interface|r_?th_?-?tim|\bpad\b)/, 'The **gap pad (TIM)** fills the gap between the FET and the cold surface. Its resistance is thickness ÷ (k × area), so a thinner, higher-k or larger-area pad lowers it.'],
     [/(r_?sa|sink[- ]to[- ]air|heat\s*sink)/, '**R_θSA** is the sink-to-air thermal resistance (K/W) in ambient air mode. A lower value means a better heat sink or more airflow. It is not used in liquid cold plate mode.'],
