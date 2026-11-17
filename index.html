@@ -1057,21 +1057,20 @@ function evaluateColdPlate(plate, s) {
 const DEFAULT_STATE = {
   flow_rate_lpm: 10.0, q_total_W: 660.0, T_inlet_C: 55.0, T_ambient_C: 55.0, h_ambient: 5.0,
   fluid_key: "weg5050", material_preset: "copper", k_solid: 398.0, t_base_mm: 2.0,
-  N_fets: 8, Rth_jc: 0.1900, Rth_tgp: 0.7931, A_fet_mm2: 128.1,, w_channel_edge_mm: 3.142,
+  N_fets: 8, Rth_jc: 0.1900, Rth_tgp: 0.7931, A_fet_mm2: 128.1, w_channel_edge_mm: 3.142,
   L_mm: 123.0, W_mm: 38.842, D_mm: 1.5, H_pin_mm: 8.8, C_mm: 0.20, S_T_mm: 3.8, S_L_mm: 3.8,
 };
-// key: [label, min, max, step, decima
-  ls]
+// key: [label, min, max, step, decimals]
 const FIELDS = {
   flow_rate_lpm: ["Flow rate [LPM]", 0.5, 60, 0.5, 1],
   q_total_W: ["Heat load Q [W]", 50, 5000, 20, 0],
-  T_inlet_C: ["Inlet temperature [°C]", -50, 150, 1, 0],
+  T_inlet_C: ["Inlet temp [°C]", 0, 120, 1, 0],
   N_fets: ["FET count", 1, 32, 1, 0],
   Rth_jc: ["R<sub>θJC</sub> [K/W]", 0.01, 2, 0.01, 4],
   Rth_tgp: ["R<sub>θ</sub> gap pad [K/W]", 0.01, 3, 0.02, 4],
   A_fet_mm2: ["Area/FET A<sub>FET</sub> [mm²]", 10, 1000, 1, 1],
   h_ambient: ["Ambient HTC [W/m²K]", 0, 100, 1, 0],
-  T_ambient_C: ["Ambient temperature [°C]", -50, 150, 1, 0],
+  T_ambient_C: ["Ambient temp [°C]", 0, 120, 1, 0],
   k_solid: ["Conductivity k [W/mK]", 10, 1000, 5, 0],
   t_base_mm: ["Base thickness [mm]", 0.5, 15, 0.25, 2],
   D_mm: ["Diameter D [mm]", 0.4, 6, 0.1, 2],
